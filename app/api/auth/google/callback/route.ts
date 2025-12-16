@@ -1,25 +1,36 @@
 import { NextResponse } from 'next/server';
+import { exchangeCodeForTokens } from '@/lib/google-auth';
 
 export async function GET(request: Request) {
-  // TODO: Implement Google OAuth callback
-  // This will handle the OAuth redirect from Google
-
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
   if (error) {
     console.error('OAuth error:', error);
-    return NextResponse.redirect('/admin?error=oauth_failed');
+    const redirectUrl = new URL('/admin', request.url);
+    redirectUrl.searchParams.set('error', 'oauth_failed');
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (!code) {
-    return NextResponse.redirect('/admin?error=no_code');
+    const redirectUrl = new URL('/admin', request.url);
+    redirectUrl.searchParams.set('error', 'no_code');
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // TODO: Exchange code for tokens and store them
-  // const tokens = await exchangeCodeForTokens(code);
-  // await saveTokens(tokens);
+  try {
+    // Exchange the authorization code for access and refresh tokens
+    await exchangeCodeForTokens(code);
 
-  return NextResponse.redirect('/admin?success=true');
+    // Redirect back to admin with success
+    const redirectUrl = new URL('/admin', request.url);
+    redirectUrl.searchParams.set('success', 'true');
+    return NextResponse.redirect(redirectUrl);
+  } catch (error) {
+    console.error('Failed to exchange code for tokens:', error);
+    const redirectUrl = new URL('/admin', request.url);
+    redirectUrl.searchParams.set('error', 'token_exchange_failed');
+    return NextResponse.redirect(redirectUrl);
+  }
 }

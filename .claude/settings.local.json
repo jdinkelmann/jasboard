@@ -9,7 +9,8 @@
       "Bash(curl:*)",
       "Bash(dir /b /s *.env*)",
       "Bash(findstr:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(test:*)"
     ]
   }
 }

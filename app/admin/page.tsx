@@ -41,9 +41,23 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
+  const [oauthMessage, setOauthMessage] = useState('');
 
   useEffect(() => {
     fetchConfig();
+    checkAuthStatus();
+
+    // Check for OAuth callback messages
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success')) {
+      setOauthMessage('Successfully connected to Google!');
+      setAuthStatus('authenticated');
+      // Clean up URL
+      window.history.replaceState({}, '', '/admin');
+    } else if (params.get('error')) {
+      setOauthMessage(`OAuth error: ${params.get('error')}`);
+    }
   }, []);
 
   const fetchConfig = async () => {
@@ -57,6 +71,34 @@ export default function AdminPage() {
       console.error('Failed to fetch config:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/status');
+      if (response.ok) {
+        const data = await response.json();
+        setAuthStatus(data.authenticated ? 'authenticated' : 'not_authenticated');
+      } else {
+        setAuthStatus('not_authenticated');
+      }
+    } catch (error) {
+      console.error('Failed to check auth status:', error);
+      setAuthStatus('not_authenticated');
+    }
+  };
+
+  const initiateGoogleOAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/google');
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Failed to initiate OAuth:', error);
+      setOauthMessage('Failed to initiate Google OAuth');
     }
   };
 
@@ -95,6 +137,46 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">JasBoard Admin</h1>
+
+        {/* Google Authentication */}
+        <section className="bg-gray-800 rounded-lg p-6 mb-6 border-2 border-blue-600">
+          <h2 className="text-2xl font-semibold mb-4">Google Authentication</h2>
+          <div className="space-y-4">
+            <p className="text-gray-300">
+              Connect your Google account to access Calendar and Photos.
+            </p>
+
+            {authStatus === 'checking' && (
+              <div className="text-gray-400">Checking authentication status...</div>
+            )}
+
+            {authStatus === 'not_authenticated' && (
+              <div>
+                <button
+                  onClick={initiateGoogleOAuth}
+                  className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
+                >
+                  Connect Google Account
+                </button>
+              </div>
+            )}
+
+            {authStatus === 'authenticated' && (
+              <div className="flex items-center gap-2 text-green-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Connected to Google</span>
+              </div>
+            )}
+
+            {oauthMessage && (
+              <div className={`p-3 rounded ${oauthMessage.includes('Success') ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
+                {oauthMessage}
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Google Calendar */}
         <section className="bg-gray-800 rounded-lg p-6 mb-6">

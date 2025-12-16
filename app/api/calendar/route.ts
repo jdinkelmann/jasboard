@@ -1,111 +1,73 @@
 import { NextResponse } from 'next/server';
+import { google } from 'googleapis';
+import { getAuthenticatedClient } from '@/lib/google-auth';
+import { readConfig } from '@/lib/config';
 
 // Cache for 15 minutes
 export const revalidate = 900;
 
 export async function GET() {
   try {
-    // TODO: Implement Google Calendar API integration
-    // For now, return mock data spread throughout the month
+    // Get configuration
+    const config = await readConfig();
+    const calendarIds = config.calendarIds;
+
+    // If no calendars configured, return empty array
+    if (!calendarIds || calendarIds.length === 0) {
+      return NextResponse.json({ events: [] });
+    }
+
+    // Get authenticated Google client
+    const auth = await getAuthenticatedClient();
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    // Fetch events from now to 30 days in the future
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 30);
 
-    const mockEvents = {
-      events: [
-        {
-          id: '1',
-          title: '6:30pm Evan Band',
-          start: new Date(year, month, 16, 18, 30).toISOString(),
-          end: new Date(year, month, 16, 20, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '2',
-          title: 'Regular for space',
-          start: new Date(year, month, 17, 14, 0).toISOString(),
-          end: new Date(year, month, 17, 15, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '3',
-          title: '12:00pm Holiday social',
-          start: new Date(year, month, 21, 12, 0).toISOString(),
-          end: new Date(year, month, 21, 14, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '4',
-          title: '10:00am Holiday recital',
-          start: new Date(year, month, 21, 10, 0).toISOString(),
-          end: new Date(year, month, 21, 11, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '5',
-          title: '6:30pm Evan Band',
-          start: new Date(year, month, 22, 18, 30).toISOString(),
-          end: new Date(year, month, 22, 20, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '6',
-          title: '6:30pm Evan Band',
-          start: new Date(year, month, 23, 18, 30).toISOString(),
-          end: new Date(year, month, 23, 20, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '7',
-          title: 'Sections',
-          start: new Date(year, month, 24, 10, 0).toISOString(),
-          end: new Date(year, month, 24, 11, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '8',
-          title: '4:00pm Evan band lesson',
-          start: new Date(year, month, 25, 16, 0).toISOString(),
-          end: new Date(year, month, 25, 17, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '9',
-          title: '12:00pm Filming recital',
-          start: new Date(year, month, 27, 12, 0).toISOString(),
-          end: new Date(year, month, 27, 13, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '10',
-          title: 'Sections',
-          start: new Date(year, month, 27, 14, 0).toISOString(),
-          end: new Date(year, month, 27, 15, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '11',
-          title: '10:00am Christmas cookies Jampland',
-          start: new Date(year, month, 28, 10, 0).toISOString(),
-          end: new Date(year, month, 28, 12, 0).toISOString(),
-          allDay: false,
-        },
-        {
-          id: '12',
-          title: 'Sections',
-          start: new Date(year, month, 29, 14, 0).toISOString(),
-          end: new Date(year, month, 29, 15, 0).toISOString(),
-          allDay: false,
-        },
-      ],
-    };
+    const allEvents: any[] = [];
 
-    return NextResponse.json(mockEvents);
+    // Fetch events from each configured calendar
+    for (const calendarId of calendarIds) {
+      try {
+        const response = await calendar.events.list({
+          calendarId,
+          timeMin: now.toISOString(),
+          timeMax: futureDate.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 100,
+        });
+
+        const items = response.data.items || [];
+
+        // Transform events to our format
+        const transformedEvents = items.map((event) => ({
+          id: event.id || '',
+          title: event.summary || 'Untitled Event',
+          start: event.start?.dateTime || event.start?.date || '',
+          end: event.end?.dateTime || event.end?.date || '',
+          allDay: !event.start?.dateTime, // If no time, it's an all-day event
+        }));
+
+        allEvents.push(...transformedEvents);
+      } catch (calError) {
+        console.error(`Error fetching calendar ${calendarId}:`, calError);
+        // Continue with other calendars even if one fails
+      }
+    }
+
+    // Sort all events by start time
+    allEvents.sort((a, b) => {
+      return new Date(a.start).getTime() - new Date(b.start).getTime();
+    });
+
+    return NextResponse.json({ events: allEvents });
   } catch (error) {
     console.error('Calendar API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch calendar events' },
-      { status: 500 }
-    );
+
+    // Return empty events on error (graceful degradation)
+    return NextResponse.json({ events: [] });
   }
 }

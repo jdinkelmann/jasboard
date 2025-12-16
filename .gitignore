@@ -58,3 +58,4 @@ config.json
 .pm2/
 pm2.log
 *.pid
+google_secretes.json
