@@ -36,6 +36,12 @@ const defaultConfig: Config = {
   },
 };
 
+interface Album {
+  id: string;
+  title: string;
+  mediaItemsCount: number;
+}
+
 export default function AdminPage() {
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [loading, setLoading] = useState(true);
@@ -43,6 +49,8 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
   const [oauthMessage, setOauthMessage] = useState('');
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [loadingAlbums, setLoadingAlbums] = useState(false);
 
   useEffect(() => {
     fetchConfig();
@@ -59,6 +67,12 @@ export default function AdminPage() {
       setOauthMessage(`OAuth error: ${params.get('error')}`);
     }
   }, []);
+
+  useEffect(() => {
+    if (authStatus === 'authenticated') {
+      fetchAlbums();
+    }
+  }, [authStatus]);
 
   const fetchConfig = async () => {
     try {
@@ -100,6 +114,33 @@ export default function AdminPage() {
       console.error('Failed to initiate OAuth:', error);
       setOauthMessage('Failed to initiate Google OAuth');
     }
+  };
+
+  const fetchAlbums = async () => {
+    setLoadingAlbums(true);
+    try {
+      const response = await fetch('/api/photos/albums');
+      if (response.ok) {
+        const data = await response.json();
+        setAlbums(data.albums || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch albums:', error);
+    } finally {
+      setLoadingAlbums(false);
+    }
+  };
+
+  const toggleAlbum = (albumId: string) => {
+    const isSelected = config.photoAlbumIds.includes(albumId);
+    const newAlbumIds = isSelected
+      ? config.photoAlbumIds.filter((id) => id !== albumId)
+      : [...config.photoAlbumIds, albumId];
+
+    setConfig({
+      ...config,
+      photoAlbumIds: newAlbumIds,
+    });
   };
 
   const saveConfig = async () => {
@@ -225,21 +266,64 @@ export default function AdminPage() {
           <h2 className="text-2xl font-semibold mb-4">Google Photos</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Album IDs (one per line)
-              </label>
-              <textarea
-                className="w-full bg-gray-700 rounded p-3 h-32"
-                value={config.photoAlbumIds.join('\n')}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    photoAlbumIds: e.target.value.split('\n').filter((id) => id.trim()),
-                  })
-                }
-                placeholder="album-id-1&#10;album-id-2"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">
+                  Select Albums
+                </label>
+                <button
+                  onClick={fetchAlbums}
+                  disabled={loadingAlbums || authStatus !== 'authenticated'}
+                  className="text-sm text-blue-400 hover:text-blue-300 disabled:text-gray-500"
+                >
+                  {loadingAlbums ? 'Loading...' : 'Refresh Albums'}
+                </button>
+              </div>
+
+              {authStatus !== 'authenticated' && (
+                <p className="text-gray-400 text-sm mb-2">
+                  Connect to Google above to see your albums
+                </p>
+              )}
+
+              {loadingAlbums && (
+                <div className="text-gray-400 text-sm">Loading albums...</div>
+              )}
+
+              {!loadingAlbums && albums.length === 0 && authStatus === 'authenticated' && (
+                <div className="text-gray-400 text-sm">
+                  No albums found. Click "Refresh Albums" to load them.
+                </div>
+              )}
+
+              {!loadingAlbums && albums.length > 0 && (
+                <div className="bg-gray-700 rounded p-3 max-h-64 overflow-y-auto space-y-2">
+                  {albums.map((album) => (
+                    <label
+                      key={album.id}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-600 p-2 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={config.photoAlbumIds.includes(album.id)}
+                        onChange={() => toggleAlbum(album.id)}
+                        className="w-4 h-4 rounded bg-gray-600 border-gray-500"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">{album.title}</div>
+                        <div className="text-xs text-gray-400">
+                          {album.mediaItemsCount} photos
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              <div className="text-xs text-gray-400 mt-2">
+                {config.photoAlbumIds.length} album(s) selected
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Refresh interval (minutes)

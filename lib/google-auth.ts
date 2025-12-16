@@ -46,7 +46,7 @@ export function getAuthUrl() {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    prompt: 'consent', // Force to get refresh token
+    prompt: 'select_account consent', // Force account selection and fresh consent
   });
 
   return url;
