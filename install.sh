@@ -23,7 +23,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="$HOME/jasboard"
-NODE_VERSION="18"
+NODE_VERSION="19"
 REQUIRED_MEMORY_MB=1024
 
 ###############################################################################
