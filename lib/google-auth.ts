@@ -40,7 +40,7 @@ export function getAuthUrl() {
 
   const scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/photoslibrary.readonly',
+    'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
   ];
 
   const url = oauth2Client.generateAuthUrl({

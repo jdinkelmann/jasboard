@@ -10,7 +10,8 @@
       "Bash(dir /b /s *.env*)",
       "Bash(findstr:*)",
       "Bash(cat:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

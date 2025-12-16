@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 interface Config {
   calendarIds: string[];
   photoAlbumIds: string[];
+  selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
   weatherLocation: {
     lat: number;
     lon: number;
@@ -22,6 +23,7 @@ interface Config {
 const defaultConfig: Config = {
   calendarIds: [],
   photoAlbumIds: [],
+  selectedPhotos: [],
   weatherLocation: {
     lat: 42.3601,
     lon: -71.0589,
@@ -34,12 +36,6 @@ const defaultConfig: Config = {
     weather: 30,
     metar: 15,
   },
-};
-
-interface Album {
-  id: string;
-  title: string;
-  mediaItemsCount: number;
 }
 
 export default function AdminPage() {
@@ -49,8 +45,9 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
   const [oauthMessage, setOauthMessage] = useState('');
-  const [albums, setAlbums] = useState<Album[]>([]);
-  const [loadingAlbums, setLoadingAlbums] = useState(false);
+  const [pickerMessage, setPickerMessage] = useState('');
+  const [pickingPhotos, setPickingPhotos] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConfig();
@@ -67,12 +64,6 @@ export default function AdminPage() {
       setOauthMessage(`OAuth error: ${params.get('error')}`);
     }
   }, []);
-
-  useEffect(() => {
-    if (authStatus === 'authenticated') {
-      fetchAlbums();
-    }
-  }, [authStatus]);
 
   const fetchConfig = async () => {
     try {
@@ -116,31 +107,72 @@ export default function AdminPage() {
     }
   };
 
-  const fetchAlbums = async () => {
-    setLoadingAlbums(true);
+  const startPhotoPicker = async () => {
+    setPickingPhotos(true);
+    setPickerMessage('Creating picker session...');
+
     try {
-      const response = await fetch('/api/photos/albums');
-      if (response.ok) {
-        const data = await response.json();
-        setAlbums(data.albums || []);
+      // Create picker session
+      const response = await fetch('/api/photos/picker/create', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create picker session');
       }
+
+      const { sessionId, pickerUri } = await response.json();
+      setCurrentSessionId(sessionId);
+
+      // Open picker in new window
+      const pickerWindow = window.open(pickerUri, 'photopicker', 'width=1000,height=800');
+      setPickerMessage('Select your photos in the popup window...');
+
+      // Poll for completion
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/photos/picker/status?sessionId=${sessionId}`);
+          if (statusResponse.ok) {
+            const { mediaItemsSet } = await statusResponse.json();
+
+            if (mediaItemsSet) {
+              clearInterval(pollInterval);
+              pickerWindow?.close();
+
+              // Retrieve selected photos
+              setPickerMessage('Retrieving selected photos...');
+              const itemsResponse = await fetch(`/api/photos/picker/items?sessionId=${sessionId}`);
+
+              if (itemsResponse.ok) {
+                const { photos, count } = await itemsResponse.json();
+                setConfig({
+                  ...config,
+                  selectedPhotos: photos,
+                });
+                setPickerMessage(`Successfully selected ${count} photo(s)!`);
+                fetchConfig(); // Refresh config
+              }
+
+              setPickingPhotos(false);
+              setCurrentSessionId(null);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling session:', error);
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Stop polling after 5 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        setPickingPhotos(false);
+        setPickerMessage('Picker session timed out');
+      }, 300000);
     } catch (error) {
-      console.error('Failed to fetch albums:', error);
-    } finally {
-      setLoadingAlbums(false);
+      console.error('Failed to start photo picker:', error);
+      setPickerMessage('Failed to start photo picker');
+      setPickingPhotos(false);
     }
-  };
-
-  const toggleAlbum = (albumId: string) => {
-    const isSelected = config.photoAlbumIds.includes(albumId);
-    const newAlbumIds = isSelected
-      ? config.photoAlbumIds.filter((id) => id !== albumId)
-      : [...config.photoAlbumIds, albumId];
-
-    setConfig({
-      ...config,
-      photoAlbumIds: newAlbumIds,
-    });
   };
 
   const saveConfig = async () => {
@@ -266,62 +298,56 @@ export default function AdminPage() {
           <h2 className="text-2xl font-semibold mb-4">Google Photos</h2>
           <div className="space-y-4">
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium">
-                  Select Albums
-                </label>
-                <button
-                  onClick={fetchAlbums}
-                  disabled={loadingAlbums || authStatus !== 'authenticated'}
-                  className="text-sm text-blue-400 hover:text-blue-300 disabled:text-gray-500"
-                >
-                  {loadingAlbums ? 'Loading...' : 'Refresh Albums'}
-                </button>
-              </div>
+              <label className="block text-sm font-medium mb-2">
+                Select Photos
+              </label>
 
               {authStatus !== 'authenticated' && (
                 <p className="text-gray-400 text-sm mb-2">
-                  Connect to Google above to see your albums
+                  Connect to Google above to select photos
                 </p>
               )}
 
-              {loadingAlbums && (
-                <div className="text-gray-400 text-sm">Loading albums...</div>
-              )}
+              {authStatus === 'authenticated' && (
+                <div className="space-y-4">
+                  <button
+                    onClick={startPhotoPicker}
+                    disabled={pickingPhotos}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-3 rounded-lg font-semibold w-full"
+                  >
+                    {pickingPhotos ? 'Selecting Photos...' : 'Select Photos from Google Photos'}
+                  </button>
 
-              {!loadingAlbums && albums.length === 0 && authStatus === 'authenticated' && (
-                <div className="text-gray-400 text-sm">
-                  No albums found. Click "Refresh Albums" to load them.
-                </div>
-              )}
+                  {pickerMessage && (
+                    <div className="p-3 rounded bg-blue-900 text-blue-200 text-sm">
+                      {pickerMessage}
+                    </div>
+                  )}
 
-              {!loadingAlbums && albums.length > 0 && (
-                <div className="bg-gray-700 rounded p-3 max-h-64 overflow-y-auto space-y-2">
-                  {albums.map((album) => (
-                    <label
-                      key={album.id}
-                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-600 p-2 rounded"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={config.photoAlbumIds.includes(album.id)}
-                        onChange={() => toggleAlbum(album.id)}
-                        className="w-4 h-4 rounded bg-gray-600 border-gray-500"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{album.title}</div>
-                        <div className="text-xs text-gray-400">
-                          {album.mediaItemsCount} photos
-                        </div>
+                  {config.selectedPhotos && config.selectedPhotos.length > 0 && (
+                    <div>
+                      <div className="text-sm text-gray-400 mb-2">
+                        {config.selectedPhotos.length} photo(s) selected
                       </div>
-                    </label>
-                  ))}
+                      <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto bg-gray-700 rounded p-2">
+                        {config.selectedPhotos.slice(0, 20).map((photo) => (
+                          <img
+                            key={photo.id}
+                            src={photo.url}
+                            alt={photo.alt}
+                            className="w-full h-24 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                      {config.selectedPhotos.length > 20 && (
+                        <div className="text-xs text-gray-400 mt-2">
+                          Showing first 20 of {config.selectedPhotos.length} photos
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-
-              <div className="text-xs text-gray-400 mt-2">
-                {config.photoAlbumIds.length} album(s) selected
-              </div>
             </div>
 
             <div>

@@ -6,6 +6,7 @@ const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 export interface AppConfig {
   calendarIds: string[];
   photoAlbumIds: string[];
+  selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
   weatherLocation: {
     lat: number;
     lon: number;
@@ -28,6 +29,7 @@ export interface AppConfig {
 const defaultConfig: AppConfig = {
   calendarIds: [],
   photoAlbumIds: [],
+  selectedPhotos: [],
   weatherLocation: {
     lat: 42.3601,
     lon: -71.0589,
@@ -79,6 +81,10 @@ export async function writeConfig(config: Partial<AppConfig>): Promise<void> {
   const currentConfig = await readConfig();
   const newConfig = { ...currentConfig, ...config };
   await fs.writeFile(CONFIG_FILE, JSON.stringify(newConfig, null, 2), 'utf-8');
+}
+
+export async function updateConfig(config: Partial<AppConfig>): Promise<void> {
+  await writeConfig(config);
 }
 
 export async function updateGoogleTokens(tokens: AppConfig['googleTokens']): Promise<void> {
