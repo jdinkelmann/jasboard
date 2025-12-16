@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 interface WeatherData {
+  location?: string;
   current: {
     temp: number;
     condition: string;
@@ -58,6 +59,11 @@ export default function Weather() {
 
   return (
     <div className="bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg p-6 shadow-lg">
+      {/* Location header */}
+      {weather.location && (
+        <div className="text-blue-100 text-sm mb-2">{weather.location}</div>
+      )}
+
       {/* Current weather */}
       <div className="flex items-center justify-between mb-6">
         <div>

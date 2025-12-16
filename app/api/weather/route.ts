@@ -104,6 +104,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      location: config.weatherLocation.name,
       current,
       forecast: dailyForecasts,
     });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, addWeeks } from 'date-fns';
 
 interface CalendarEvent {
   id: string;
@@ -42,12 +42,10 @@ export default function Calendar() {
     };
   }, []);
 
-  // Get calendar days for the month view
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  // Get calendar days for rolling 4-week view
+  const calendarStart = startOfWeek(currentDate); // Start of current week
+  const calendarEnd = addWeeks(calendarStart, 4); // 4 weeks from start
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd }).slice(0, 28); // Exactly 4 weeks (28 days)
 
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
@@ -74,9 +72,9 @@ export default function Calendar() {
 
   return (
     <div className="bg-black text-white h-full flex flex-col overflow-hidden">
-      {/* Month/Year header - smaller to give more space to calendar */}
+      {/* Date range header */}
       <div className="text-center py-2 text-lg font-semibold">
-        {format(currentDate, 'MMMM yyyy')}
+        {format(calendarStart, 'MMM d')} - {format(addWeeks(calendarStart, 4), 'MMM d, yyyy')}
       </div>
 
       {/* Calendar grid */}
@@ -95,14 +93,11 @@ export default function Calendar() {
           {calendarDays.map((day, i) => {
             const dayEvents = getEventsForDay(day);
             const isToday = isSameDay(day, today);
-            const isCurrentMonth = isSameMonth(day, currentDate);
 
             return (
               <div
                 key={i}
-                className={`bg-black p-1 flex flex-col min-h-[80px] ${
-                  !isCurrentMonth ? 'opacity-40' : ''
-                }`}
+                className="bg-black p-1 flex flex-col min-h-[80px]"
               >
                 {/* Date number */}
                 <div className="flex justify-center mb-1">
