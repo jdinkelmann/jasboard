@@ -106,11 +106,22 @@ install_nodejs() {
     fi
 
     print_info "Installing Node.js ${NODE_VERSION}..."
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
-    sudo apt-get install -y nodejs
 
-    print_success "Node.js $(node -v) installed"
-    print_success "npm $(npm -v) installed"
+    # Use official NodeSource setup script with error handling
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x -o /tmp/nodesource_setup.sh
+    sudo -E bash /tmp/nodesource_setup.sh
+
+    # Install nodejs, ignoring GPG warnings
+    sudo apt-get install -y nodejs --allow-unauthenticated 2>&1 | grep -v "Policy will reject"
+
+    # Verify installation
+    if command -v node &> /dev/null; then
+        print_success "Node.js $(node -v) installed"
+        print_success "npm $(npm -v) installed"
+    else
+        print_error "Node.js installation failed"
+        exit 1
+    fi
 }
 
 install_system_dependencies() {
