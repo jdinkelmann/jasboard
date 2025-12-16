@@ -1,0 +1,29 @@
+[Unit]
+Description=JasBoard Personal Information Dashboard
+Documentation=https://github.com/YOUR_USERNAME/jasboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/jasboard
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security options
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target

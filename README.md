@@ -64,53 +64,50 @@ Open [http://localhost:3000](http://localhost:3000) to see the dashboard.
 
 ## Deploying to Raspberry Pi
 
-### Build for Production
+### Quick Installation (Recommended)
+
+JasBoard includes an automated installer for Raspberry Pi:
 
 ```bash
-npm run build
-```
-
-### Transfer to Raspberry Pi
-
-```bash
-# Copy files to Pi
-scp -r ./* pi@raspberrypi:/home/pi/jasboard/
-
-# SSH into Pi
+# SSH into your Raspberry Pi
 ssh pi@raspberrypi
 
-# Install dependencies and build
-cd ~/jasboard
-npm ci --production
-npm run build
+# Run the installer
+curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/jasboard/main/install.sh | bash
 ```
 
-### Run with PM2
+The installer will:
+- Install all dependencies (Node.js, Chromium, etc.)
+- Build the application
+- Set up auto-start on boot
+- Configure kiosk mode
+- Enable network access via `http://jasboard.local:3000`
+
+**Installation time:** ~10-15 minutes on Pi 4, ~15-20 minutes on Pi 3
+
+### Full Deployment Guide
+
+For detailed instructions, troubleshooting, and advanced configuration, see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+
+### Requirements
+
+- Raspberry Pi 3B+ or newer (Pi 4 recommended)
+- Raspberry Pi OS Lite (32-bit or 64-bit)
+- 16GB+ microSD card
+- Display with HDMI input
+
+### Updating
 
 ```bash
-# Install PM2
-npm install -g pm2
-
-# Start the app
-pm2 start npm --name "jasboard" -- start
-
-# Save PM2 config
-pm2 save
-
-# Set PM2 to start on boot
-pm2 startup
+cd ~/jasboard
+bash update.sh
 ```
 
-### Auto-start Browser in Kiosk Mode
+### Network Access
 
-Create `~/.config/autostart/jasboard.desktop`:
-
-```
-[Desktop Entry]
-Type=Application
-Name=JasBoard
-Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost:3000
-```
+Once installed, access from any device on your network:
+- **Display:** `http://jasboard.local:3000`
+- **Admin:** `http://jasboard.local:3000/admin`
 
 ## Development
 
