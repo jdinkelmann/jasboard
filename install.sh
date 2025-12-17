@@ -152,7 +152,7 @@ install_system_dependencies() {
         xinit \
         xserver-xorg \
         x11-xserver-utils \
-        chromium-browser \
+        chromium \
         unclutter \
         avahi-daemon -y
 
