@@ -29,7 +29,6 @@ sudo apt update
 print_info "Installing emoji fonts..."
 sudo apt install -y \
     fonts-noto-color-emoji \
-    fonts-noto-emoji \
     fonts-symbola
 
 print_success "Emoji fonts installed!"

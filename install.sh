@@ -156,7 +156,6 @@ install_system_dependencies() {
         unclutter \
         avahi-daemon \
         fonts-noto-color-emoji \
-        fonts-noto-emoji \
         fonts-symbola -y
 
     print_success "System dependencies installed (including emoji fonts)"
