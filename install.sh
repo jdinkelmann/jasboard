@@ -248,6 +248,7 @@ setup_systemd_service() {
     print_step "Setting up systemd service"
 
     # Create systemd service file
+    NPM_PATH=$(which npm)
     sudo tee /etc/systemd/system/jasboard.service > /dev/null <<EOF
 [Unit]
 Description=JasBoard Dashboard
@@ -259,9 +260,12 @@ User=$USER
 WorkingDirectory=$INSTALL_DIR
 Environment=NODE_ENV=production
 Environment=PORT=3000
-ExecStart=/usr/bin/npm start
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=$NPM_PATH start --prefix $INSTALL_DIR
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
