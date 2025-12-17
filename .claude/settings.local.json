@@ -15,7 +15,13 @@
       "Bash(dir:*)",
       "Bash(git update-index:*)",
       "Bash(find:*)",
-      "Bash(npm ci:*)"
+      "Bash(npm ci:*)",
+      "Bash(grep:*)",
+      "Bash(while read f)",
+      "Bash(do if ! grep -q \"export const dynamic\" \"$f\")",
+      "Bash(then echo \"$f\")",
+      "Bash(fi)",
+      "Bash(done)"
     ]
   }
 }

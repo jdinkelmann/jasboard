@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+
+// Force dynamic rendering for admin page
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Config {
   calendarIds: string[];
@@ -331,10 +336,10 @@ export default function AdminPage() {
                       </div>
                       <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto bg-gray-700 rounded p-2">
                         {config.selectedPhotos.slice(0, 20).map((photo) => (
-                          <img
-                            key={photo.id}
-                            src={photo.url}
+                          <Image 
+                           src={photo.url}
                             alt={photo.alt}
+                            key={photo.id}
                             className="w-full h-24 object-cover rounded"
                           />
                         ))}

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedClient } from '../../../../lib/google-auth';
 
+// Force dynamic rendering - requires authentication
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const auth = await getAuthenticatedClient();

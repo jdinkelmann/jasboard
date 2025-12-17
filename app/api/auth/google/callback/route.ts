@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { exchangeCodeForTokens } from '../../../../../lib/google-auth';
 
+// Force dynamic rendering for OAuth callback
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { readConfig, writeConfig } from '../../../lib/config';
 
+// Force dynamic rendering - reads/writes runtime config
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const config = await readConfig();

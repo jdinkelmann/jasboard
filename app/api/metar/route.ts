@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { readConfig } from '../../../lib/config';
 import { format } from 'date-fns';
 
+// Force dynamic rendering - depends on runtime config
+export const dynamic = 'force-dynamic';
 // Cache for 15 minutes
 export const revalidate = 900;
 

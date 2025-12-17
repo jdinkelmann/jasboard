@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedClient } from '../../../lib/google-auth';
 import { readConfig } from '../../../lib/config';
 
+// Force dynamic rendering - depends on runtime config
+export const dynamic = 'force-dynamic';
 // Cache for 1 hour
 export const revalidate = 3600;
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import heic2any from 'heic2any';
 
 interface Photo {
   id: string;
@@ -46,6 +45,9 @@ export default function Photos() {
 
   useEffect(() => {
     const convertHeicPhotos = async () => {
+      // Only run in browser
+      if (typeof window === 'undefined') return;
+
       const newConverted = new Map(convertedPhotos);
 
       for (const photo of photos) {
@@ -57,6 +59,9 @@ export default function Photos() {
         ) {
           if (!newConverted.has(photo.id)) {
             try {
+              // Dynamically import heic2any only in browser
+              const { default: heic2any } = await import('heic2any');
+
               // Fetch the HEIC image
               const response = await fetch(photo.url);
               const blob = await response.blob();
@@ -91,7 +96,7 @@ export default function Photos() {
     return () => {
       convertedPhotos.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [photos]);
+  }, [photos, convertedPhotos]);
 
   useEffect(() => {
     if (photos.length === 0) return;

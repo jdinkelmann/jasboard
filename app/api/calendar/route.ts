@@ -3,6 +3,8 @@ import { google } from 'googleapis';
 import { getAuthenticatedClient } from '../../../lib/google-auth';
 import { readConfig } from '../../../lib/config';
 
+// Force dynamic rendering - requires authentication
+export const dynamic = 'force-dynamic';
 // Cache for 15 minutes
 export const revalidate = 900;
 
