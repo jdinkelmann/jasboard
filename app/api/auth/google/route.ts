@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthUrl } from '@/lib/google-auth';
+import { getAuthUrl } from '../../../../lib/google-auth';
 
 export async function GET() {
   try {

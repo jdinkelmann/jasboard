@@ -123,8 +123,8 @@ update_dependencies() {
 
     print_info "Checking for dependency changes..."
 
-    # Clean install dependencies
-    npm ci --omit=dev
+    # Clean install all dependencies (including devDependencies needed for build)
+    npm ci
 
     print_success "Dependencies updated"
 }
@@ -134,6 +134,9 @@ rebuild_application() {
 
     print_info "Building..."
     npm run build
+
+    print_info "Removing devDependencies to save space..."
+    npm prune --production
 
     print_success "Build completed"
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getGoogleTokens } from '@/lib/config';
+import { getGoogleTokens } from '../../../../lib/config';
 
 export async function GET() {
   try {

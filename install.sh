@@ -211,10 +211,13 @@ build_application() {
     cd "$INSTALL_DIR"
 
     print_info "Installing dependencies (this may take a few minutes)..."
-    npm ci --omit=dev
+    npm ci
 
     print_info "Building application..."
     npm run build
+
+    print_info "Removing devDependencies to save space..."
+    npm prune --production
 
     print_success "Application built successfully"
 }

@@ -221,8 +221,9 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
   # On Pi:
   cd ~/jasboard
   git pull
-  npm ci --omit=dev
+  npm ci
   npm run build
+  npm prune --production  # Optional: save space by removing devDependencies
   ```
 
 **Issue: npm ci fails or hangs**

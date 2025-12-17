@@ -13,7 +13,9 @@
       "Bash(test:*)",
       "Bash(npm install:*)",
       "Bash(dir:*)",
-      "Bash(git update-index:*)"
+      "Bash(git update-index:*)",
+      "Bash(find:*)",
+      "Bash(npm ci:*)"
     ]
   }
 }

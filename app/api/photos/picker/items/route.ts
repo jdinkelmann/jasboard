@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAuthenticatedClient } from '@/lib/google-auth';
-import { readConfig, updateConfig } from '@/lib/config';
+import { getAuthenticatedClient } from '../../../../../lib/google-auth';
+import { readConfig, updateConfig } from '../../../../../lib/config';
 
 export async function GET(request: Request) {
   try {

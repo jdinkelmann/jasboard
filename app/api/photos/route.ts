@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAuthenticatedClient } from '@/lib/google-auth';
-import { readConfig } from '@/lib/config';
+import { getAuthenticatedClient } from '../../../lib/google-auth';
+import { readConfig } from '../../../lib/config';
 
 // Cache for 1 hour
 export const revalidate = 3600;

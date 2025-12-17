@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { getGoogleTokens, updateGoogleTokens } from '@/lib/config';
+import { getGoogleTokens, updateGoogleTokens } from '../lib/config';
 
 export function getOAuth2Client() {
   const oauth2Client = new google.auth.OAuth2(
