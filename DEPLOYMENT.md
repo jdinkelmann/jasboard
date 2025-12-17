@@ -436,6 +436,6 @@ rm ~/.config/disable-screensaver.sh
 rm -rf ~/jasboard
 
 # Optional: Remove Node.js and dependencies
-sudo apt remove -y nodejs chromium-browser
+sudo apt remove -y nodejs chromium
 sudo apt autoremove -y
 ```

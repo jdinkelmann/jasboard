@@ -46,7 +46,7 @@ unclutter -idle 1 -root &
 sleep 15
 
 # Start Chromium in kiosk mode
-chromium-browser \
+chromium \
   --kiosk \
   --noerrdialogs \
   --disable-infobars \

@@ -409,7 +409,7 @@ sudo systemctl restart jasboard.service
 ps aux | grep chromium
 
 # Kill Chromium (for testing)
-killall chromium-browser
+killall chromium
 
 # Update to latest code
 cd ~/jasboard
