@@ -205,6 +205,27 @@ setup_environment() {
     fi
 }
 
+ensure_swap_space() {
+    print_step "Checking swap space"
+
+    # Check current swap size
+    CURRENT_SWAP=$(free -m | grep Swap | awk '{print $2}')
+
+    if [ "$CURRENT_SWAP" -lt 1024 ]; then
+        print_warning "Swap space is ${CURRENT_SWAP}MB (recommended: 1024MB+)"
+        print_info "Increasing swap to 1024MB for build process..."
+
+        sudo dphys-swapfile swapoff 2>/dev/null || true
+        sudo sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=1024/' /etc/dphys-swapfile
+        sudo dphys-swapfile setup
+        sudo dphys-swapfile swapon
+
+        print_success "Swap increased to 1024MB"
+    else
+        print_success "Swap space is adequate (${CURRENT_SWAP}MB)"
+    fi
+}
+
 build_application() {
     print_step "Building JasBoard application"
 
@@ -213,8 +234,9 @@ build_application() {
     print_info "Installing dependencies (this may take a few minutes)..."
     npm ci
 
-    print_info "Building application..."
-    npm run build
+    print_info "Building application (this may take 5-10 minutes on Pi)..."
+    # Increase Node.js heap size for build on memory-constrained devices
+    NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
     print_info "Removing devDependencies to save space..."
     npm prune --production
@@ -352,6 +374,7 @@ main() {
     install_system_dependencies
     clone_or_update_repo
     setup_environment
+    ensure_swap_space
     build_application
     setup_systemd_service
     setup_hostname

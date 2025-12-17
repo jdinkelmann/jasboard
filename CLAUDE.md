@@ -226,6 +226,26 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
   npm prune --production  # Optional: save space by removing devDependencies
   ```
 
+**Issue: "JavaScript heap out of memory" during build**
+- **Cause**: Insufficient memory on Raspberry Pi
+- **Solution**:
+  ```bash
+  # Option 1: Increase Node.js heap size
+  NODE_OPTIONS="--max-old-space-size=2048" npm run build
+
+  # Option 2: Also increase swap space
+  sudo dphys-swapfile swapoff
+  sudo sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=1024/' /etc/dphys-swapfile
+  sudo dphys-swapfile setup
+  sudo dphys-swapfile swapon
+
+  # Then rebuild with increased heap
+  NODE_OPTIONS="--max-old-space-size=2048" npm run build
+
+  # Option 3: Build on development machine and copy .next folder
+  # On dev machine: npm run build, then rsync .next to Pi
+  ```
+
 **Issue: npm ci fails or hangs**
 - **Cause**: Network issues, corrupted cache
 - **Solution**:

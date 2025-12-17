@@ -132,8 +132,9 @@ update_dependencies() {
 rebuild_application() {
     print_step "Rebuilding application"
 
-    print_info "Building..."
-    npm run build
+    print_info "Building (this may take 5-10 minutes)..."
+    # Increase Node.js heap size for build on memory-constrained devices
+    NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
     print_info "Removing devDependencies to save space..."
     npm prune --production
