@@ -113,12 +113,12 @@ install_nodejs() {
     }
 
     # Update package lists and install, bypassing GPG checks if needed
-    sudo apt-get update --allow-releaseinfo-change 2>&1 | grep -v "Policy will reject" || true
+    sudo apt update --allow-releaseinfo-change 2>&1 | grep -v "Policy will reject" || true
 
     # Try normal install first
-    if sudo apt-get install -y nodejs 2>&1 | grep -v "Policy will reject"; then
+    if sudo apt install -y nodejs 2>&1 | grep -v "Policy will reject"; then
         print_success "Node.js installed successfully"
-    elif sudo apt-get install -y nodejs --allow-unauthenticated 2>&1 | grep -v "Policy will reject"; then
+    elif sudo apt install -y nodejs --allow-unauthenticated 2>&1 | grep -v "Policy will reject"; then
         print_warning "Node.js installed with authentication bypass"
     else
         print_error "Failed to install via apt, trying alternative method..."
@@ -144,18 +144,17 @@ install_system_dependencies() {
     print_step "Installing system dependencies"
 
     print_info "Updating package lists..."
-    sudo apt-get update -qq
+    sudo apt update
 
-    # print_info "Installing required packages..."
-    # sudo apt-get install -y \
-    #     git \
-    #     xinit \
-    #     xserver-xorg \
-    #     x11-xserver-utils \
-    #     chromium-browser \
-    #     unclutter \
-    #     avahi-daemon \
-    #     &> /dev/null
+    print_info "Installing required packages..."
+    sudo apt install \
+        git \
+        xinit \
+        xserver-xorg \
+        x11-xserver-utils \
+        chromium-browser \
+        unclutter \
+        avahi-daemon -y
 
     print_success "System dependencies installed"
 }
