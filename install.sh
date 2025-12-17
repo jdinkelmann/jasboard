@@ -154,9 +154,12 @@ install_system_dependencies() {
         x11-xserver-utils \
         chromium \
         unclutter \
-        avahi-daemon -y
+        avahi-daemon \
+        fonts-noto-color-emoji \
+        fonts-noto-emoji \
+        fonts-symbola -y
 
-    print_success "System dependencies installed"
+    print_success "System dependencies installed (including emoji fonts)"
 }
 
 clone_or_update_repo() {

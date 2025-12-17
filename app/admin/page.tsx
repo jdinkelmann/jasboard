@@ -340,6 +340,8 @@ export default function AdminPage() {
                            src={photo.url}
                             alt={photo.alt}
                             key={photo.id}
+                            width={500}
+                            height={300}
                             className="w-full h-24 object-cover rounded"
                           />
                         ))}
