@@ -39,11 +39,28 @@ xset s off
 xset -dpms
 xset s noblank
 
+# Rotate display to portrait mode (90 degrees clockwise)
+xrandr --output HDMI-1 --rotate right 2>/dev/null || \
+xrandr --output HDMI-2 --rotate right 2>/dev/null || \
+xrandr --output $(xrandr | grep " connected" | cut -d' ' -f1 | head -n1) --rotate right
+
 # Hide mouse cursor
 unclutter -idle 1 -root &
 
-# Wait for JasBoard service to be ready
-sleep 15
+# Wait for JasBoard service to be ready (poll until server responds)
+echo "Waiting for JasBoard service to start..."
+MAX_ATTEMPTS=60
+ATTEMPT=0
+until curl -s http://localhost:3000 > /dev/null 2>&1; do
+  ATTEMPT=$((ATTEMPT + 1))
+  if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+    echo "ERROR: JasBoard service did not start after $MAX_ATTEMPTS seconds"
+    exit 1
+  fi
+  echo "Waiting for service... ($ATTEMPT/$MAX_ATTEMPTS)"
+  sleep 1
+done
+echo "JasBoard service is ready!"
 
 # Start Chromium in kiosk mode
 chromium \
@@ -108,9 +125,10 @@ fi
 echo ""
 print_info "Display Configuration"
 echo ""
-print_info "Display is configured for landscape mode by default"
-print_warning "For portrait mode (1080x1920), edit /boot/config.txt"
+print_success "Display rotation configured in .xinitrc (90° clockwise)"
+print_info "Screen will rotate to portrait mode (1080x1920) on startup"
 echo ""
+print_info "If rotation doesn't work, you can also set it in /boot/config.txt:"
 echo "  sudo nano /boot/config.txt"
 echo ""
 echo "Add one of these lines:"
