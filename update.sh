@@ -124,7 +124,7 @@ update_dependencies() {
     print_info "Checking for dependency changes..."
 
     # Clean install dependencies
-    npm ci --production
+    npm ci --omit=dev
 
     print_success "Dependencies updated"
 }

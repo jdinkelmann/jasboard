@@ -80,7 +80,7 @@ npm run lint
 
 ```bash
 # On Pi: Install dependencies and build
-npm ci --production
+npm ci --omit=dev
 npm run build
 
 # Run in production mode
@@ -185,6 +185,263 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
 - API credentials stored securely (environment variables or encrypted config)
 - Google OAuth tokens refreshed automatically
 - HTTPS recommended even for local network
+
+## Debugging on Raspberry Pi
+
+### Current Deployment Status (December 2025)
+
+**Automated Installer Available:**
+- Location: `install.sh` in repository root
+- Install command: `curl -sSL https://raw.githubusercontent.com/jdinkelmann/jasboard/main/install.sh | bash`
+- Installs: Node.js 22, systemd service, Chromium kiosk mode
+- Network access: `http://jasboard.local:3000`
+
+**Key Files:**
+- Main installer: `/install.sh`
+- Update script: `/update.sh`
+- Kiosk setup: `/scripts/setup-kiosk.sh`
+- Systemd service: `/etc/systemd/system/jasboard.service`
+- Install directory: `~/jasboard`
+- Environment config: `~/jasboard/.env.local`
+- User config: `~/jasboard/config.json`
+
+### Common Issues and Solutions
+
+#### Build Failures
+
+**Issue: "Module not found: Can't resolve '@/lib/google-auth'"**
+- **Cause**: Missing lib files in repository
+- **Solution**: Ensure all files are committed and pushed to GitHub
+  ```bash
+  # On development machine:
+  git add -A
+  git commit -m "Add missing lib files"
+  git push
+
+  # On Pi:
+  cd ~/jasboard
+  git pull
+  npm ci --omit=dev
+  npm run build
+  ```
+
+**Issue: npm ci fails or hangs**
+- **Cause**: Network issues, corrupted cache
+- **Solution**:
+  ```bash
+  npm cache clean --force
+  rm -rf node_modules package-lock.json
+  npm install
+  npm run build
+  ```
+
+#### Service Issues
+
+**Check service status:**
+```bash
+# View current status
+sudo systemctl status jasboard.service
+
+# View live logs
+sudo journalctl -u jasboard.service -f
+
+# Restart service
+sudo systemctl restart jasboard.service
+
+# Stop service
+sudo systemctl stop jasboard.service
+
+# Start service
+sudo systemctl start jasboard.service
+```
+
+**Service won't start:**
+1. Check if port 3000 is in use: `sudo lsof -i :3000`
+2. Check environment variables: `cat ~/jasboard/.env.local`
+3. Check if build succeeded: `ls ~/jasboard/.next/`
+4. Test manually: `cd ~/jasboard && npm start`
+
+#### Network Access Issues
+
+**Can't access jasboard.local:**
+```bash
+# Check Avahi is running
+sudo systemctl status avahi-daemon
+
+# Restart Avahi
+sudo systemctl restart avahi-daemon
+
+# Check hostname
+hostname  # Should show "jasboard"
+
+# Find IP address
+hostname -I
+```
+
+**Access via IP instead:** `http://192.168.x.x:3000`
+
+#### Kiosk Mode Issues
+
+**Chromium not starting:**
+```bash
+# Check autostart file
+cat ~/.config/autostart/jasboard-kiosk.desktop
+
+# Test startup script manually
+bash ~/.config/jasboard-kiosk-start.sh
+
+# Check if X server is running
+ps aux | grep X
+
+# Restart X server (requires reboot)
+sudo reboot
+```
+
+**Black screen in kiosk:**
+- JasBoard service might not be running
+- Check logs: `sudo journalctl -u jasboard.service -n 50`
+- Verify app is accessible: `curl http://localhost:3000`
+
+#### Google OAuth Issues
+
+**"Invalid credentials" or OAuth errors:**
+1. Check `.env.local` has correct credentials
+2. Verify redirect URI in Google Console matches:
+   - `http://jasboard.local:3000/api/auth/google/callback`
+   - `http://localhost:3000/api/auth/google/callback`
+3. Check Google API scopes are enabled:
+   - Google Calendar API
+   - Google Photos Picker API
+
+**Token expired:**
+- Tokens are auto-refreshed
+- Check `config.json` for token data
+- Delete `config.json` to force re-auth
+
+#### Performance Issues
+
+**App is slow:**
+```bash
+# Check CPU/memory usage
+top
+
+# Check Pi temperature
+vcgencmd measure_temp
+
+# Check available memory
+free -h
+
+# Check disk space
+df -h
+```
+
+**High memory usage:**
+- Normal for Node.js + Chromium on Pi
+- Consider reducing photo resolution
+- Limit number of calendar events shown
+- Increase swap if needed:
+  ```bash
+  sudo dphys-swapfile swapoff
+  sudo nano /etc/dphys-swapfile  # Set CONF_SWAPSIZE=1024
+  sudo dphys-swapfile setup
+  sudo dphys-swapfile swapon
+  ```
+
+### Useful Debugging Commands
+
+```bash
+# View all logs
+sudo journalctl -u jasboard.service --since today
+
+# Follow logs in real-time
+sudo journalctl -u jasboard.service -f
+
+# Check Node.js version
+node -v  # Should be v22.x.x
+
+# Check npm version
+npm -v
+
+# Test app locally
+cd ~/jasboard
+npm start
+# Then visit http://localhost:3000
+
+# Check what's using port 3000
+sudo lsof -i :3000
+
+# View environment variables
+cd ~/jasboard
+cat .env.local
+
+# Check config file
+cat ~/jasboard/config.json
+
+# View systemd service file
+cat /etc/systemd/system/jasboard.service
+
+# Reload systemd after editing service
+sudo systemctl daemon-reload
+sudo systemctl restart jasboard.service
+
+# Check if Chromium is running
+ps aux | grep chromium
+
+# Kill Chromium (for testing)
+killall chromium-browser
+
+# Update to latest code
+cd ~/jasboard
+bash update.sh
+```
+
+### Manual Installation Steps (if installer fails)
+
+```bash
+# 1. Install Node.js 22
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 2. Install system dependencies
+sudo apt update
+sudo apt install -y git xinit xserver-xorg x11-xserver-utils chromium unclutter avahi-daemon
+
+# 3. Clone repository
+git clone https://github.com/jdinkelmann/jasboard.git ~/jasboard
+cd ~/jasboard
+
+# 4. Set up environment
+cp .env.local.example .env.local
+nano .env.local  # Add Google OAuth credentials
+
+# 5. Build application
+npm ci --omit=dev
+npm run build
+
+# 6. Create systemd service (see install.sh for full service file)
+sudo nano /etc/systemd/system/jasboard.service
+sudo systemctl daemon-reload
+sudo systemctl enable jasboard.service
+sudo systemctl start jasboard.service
+
+# 7. Set up kiosk mode
+bash scripts/setup-kiosk.sh
+
+# 8. Set hostname
+echo "jasboard" | sudo tee /etc/hostname
+sudo sed -i 's/raspberrypi/jasboard/g' /etc/hosts
+sudo reboot
+```
+
+### Getting Help
+
+When asking for help, provide:
+1. Output of: `sudo journalctl -u jasboard.service -n 50`
+2. Output of: `node -v && npm -v`
+3. Output of: `cat ~/jasboard/.env.local` (redact credentials!)
+4. Output of: `sudo systemctl status jasboard.service`
+5. Description of what's not working
+6. Any error messages you see
 
 ## Future Considerations
 
