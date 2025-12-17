@@ -146,16 +146,16 @@ install_system_dependencies() {
     print_info "Updating package lists..."
     sudo apt-get update -qq
 
-    print_info "Installing required packages..."
-    sudo apt-get install -y \
-        git \
-        xinit \
-        xserver-xorg \
-        x11-xserver-utils \
-        chromium-browser \
-        unclutter \
-        avahi-daemon \
-        &> /dev/null
+    # print_info "Installing required packages..."
+    # sudo apt-get install -y \
+    #     git \
+    #     xinit \
+    #     xserver-xorg \
+    #     x11-xserver-utils \
+    #     chromium-browser \
+    #     unclutter \
+    #     avahi-daemon \
+    #     &> /dev/null
 
     print_success "System dependencies installed"
 }
