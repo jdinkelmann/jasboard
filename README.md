@@ -73,7 +73,7 @@ JasBoard includes an automated installer for Raspberry Pi:
 ssh pi@raspberrypi
 
 # Run the installer
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/jasboard/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/jdinkelmann/jasboard/main/install.sh | bash
 ```
 
 The installer will:

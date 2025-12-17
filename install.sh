@@ -176,7 +176,7 @@ clone_or_update_repo() {
         fi
     else
         print_info "Cloning repository to $INSTALL_DIR..."
-        git clone https://github.com/YOUR_USERNAME/jasboard.git "$INSTALL_DIR"
+        git clone https://github.com/jdinkelmann/jasboard.git "$INSTALL_DIR"
         print_success "Repository cloned"
     fi
 }

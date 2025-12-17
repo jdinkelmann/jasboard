@@ -70,7 +70,7 @@ sudo apt update && sudo apt upgrade -y
 Run this single command to install everything:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/jasboard/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/jdinkelmann/jasboard/main/install.sh | bash
 ```
 
 ### Manual Installation
@@ -79,7 +79,7 @@ If you prefer to review the script first:
 
 ```bash
 # Download the installer
-curl -O https://raw.githubusercontent.com/YOUR_USERNAME/jasboard/main/install.sh
+curl -O https://raw.githubusercontent.com/jdinkelmann/jasboard/main/install.sh
 
 # Review it
 cat install.sh
@@ -412,7 +412,7 @@ sudo systemctl restart jasboard.service
 ## Support
 
 For issues or questions:
-- Check the [GitHub Issues](https://github.com/YOUR_USERNAME/jasboard/issues)
+- Check the [GitHub Issues](https://github.com/jdinkelmann/jasboard/issues)
 - Review logs: `sudo journalctl -u jasboard.service -f`
 - Verify configuration: `cat ~/jasboard/.env.local`
 
