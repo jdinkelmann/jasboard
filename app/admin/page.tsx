@@ -162,13 +162,14 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    theme: e.target.value as 'default' | 'epaper' | 'wood',
+                    theme: e.target.value as 'default' | 'epaper' | 'wood' | 'dashboard',
                   })
                 }
               >
                 <option value="default">Default - Dark background with vibrant gradients</option>
                 <option value="epaper">E-paper - Clean white background with pastels</option>
                 <option value="wood">Wood - Immersive nature background with transparency</option>
+                <option value="dashboard">Dashboard - Customizable background image with dark widgets</option>
               </select>
             </div>
             <div className="text-sm text-gray-400">
