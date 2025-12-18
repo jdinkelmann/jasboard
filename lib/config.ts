@@ -4,6 +4,8 @@ import path from 'path';
 const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 
 export interface AppConfig {
+  theme?: 'default' | 'epaper' | 'wood' | 'dashboard';
+  backgroundImageUrl?: string;
   calendarIds: string[];
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
