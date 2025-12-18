@@ -464,9 +464,122 @@ When asking for help, provide:
 5. Description of what's not working
 6. Any error messages you see
 
+## Current Implementation Plan: Theme System (December 2025)
+
+### Overview
+Implementing a theme system with 3 distinct themes:
+1. **Default** - Current design (dark background, current colors)
+2. **E-paper** - White background with pastel colors (inspired by e-ink displays)
+3. **Wood** - Immersive background image with semi-transparent widgets using backdrop blur
+
+### Architecture
+- **CSS Variables** - Define theme colors as CSS custom properties
+- **React Context** - Manage theme state across app
+- **Tailwind Integration** - Use CSS variables within Tailwind utilities
+- **config.json** - Persist theme selection
+- **Backward Compatible** - Default theme matches current design
+
+### Theme Definitions
+
+#### Default Theme (Current)
+- Background: Dark (#111827 / gray-900)
+- Calendar: Blue gradients (blue-500, blue-600)
+- Weather: Purple gradients (purple-500, purple-600)
+- METAR: Sky blue gradients (sky-500, sky-600)
+- Text: White/gray
+
+#### E-paper Theme (White + Pastels)
+- Background: Pure white (#ffffff)
+- Calendar: Light sky blue background (#e0f2fe), soft pink accents (#fb7185)
+- Weather: Light blue background (#dbeafe), soft teal accents
+- METAR: Light pink background (#fce7f3), warm colors
+- Text: Dark gray (#1f2937)
+- Border radius: Slightly reduced for paper-like feel
+- Shadows: Subtle, muted
+
+#### Wood Theme (Immersive Background)
+- Background: Large mountain/nature image (`/images/mountain-bg.jpg`)
+- Widget Opacity: 90% with 12px backdrop blur
+- Calendar: Dark wood tone with transparency (rgba(62, 39, 35, 0.85))
+- Weather: Deep green with transparency (rgba(20, 83, 45, 0.85))
+- METAR: Warm brown with transparency (rgba(120, 53, 15, 0.85))
+- Text: Light colors for contrast
+- Border radius: Rounded for modern feel
+
+### Implementation Phases
+
+#### Phase 1: Theme Infrastructure
+1. Create theme definitions file (`lib/themes/definitions.ts`)
+2. Create ThemeContext (`lib/themes/ThemeContext.tsx`)
+3. Update root layout to wrap app in ThemeProvider
+4. Update globals.css to use CSS variables
+5. Extend Tailwind config for theme variables
+
+#### Phase 2: Replace Photos Widget
+6. Create placeholder Photos widget with "Coming Soon" message
+7. Remove Google Photos API calls from placeholder
+8. Update placeholder to use theme colors
+
+#### Phase 3: Refactor Widgets for Themes
+9. Update Calendar widget to use theme variables
+10. Update Weather widget to use theme variables
+11. Update METAR widget to use theme variables
+12. Add Wood theme background image support to main page
+
+#### Phase 4: Add Theme Selector to Admin
+13. Add theme dropdown to admin panel
+14. Update config API to save/load theme
+15. Test all 3 themes on both development and Pi
+
+### File Changes Required
+
+**New Files:**
+- `lib/themes/definitions.ts` - Theme color definitions
+- `lib/themes/ThemeContext.tsx` - React context provider
+- `public/images/mountain-bg.jpg` - Background image for Wood theme
+
+**Modified Files:**
+- `app/layout.tsx` - Add ThemeProvider wrapper
+- `app/globals.css` - Add CSS variable definitions
+- `tailwind.config.ts` - Extend with theme color references
+- `app/page.tsx` - Add Wood theme background support
+- `components/widgets/Calendar.tsx` - Use theme colors
+- `components/widgets/Weather.tsx` - Use theme colors
+- `components/widgets/Metar.tsx` - Use theme colors
+- `components/widgets/Photos.tsx` - Simplified placeholder
+- `app/admin/page.tsx` - Add theme selector UI
+- `app/api/config/route.ts` - Handle theme in config
+
+### Current Progress
+
+**Status: Ready to implement**
+
+**Active Todo List:**
+1. ✅ Plan approved
+2. 🔄 Create theme definitions file (lib/themes/definitions.ts) - IN PROGRESS
+3. ⏳ Create ThemeContext provider
+4. ⏳ Update root layout with ThemeProvider
+5. ⏳ Update globals.css with CSS variables
+6. ⏳ Extend Tailwind config
+7. ⏳ Replace Photos widget with placeholder
+8. ⏳ Refactor Calendar widget for themes
+9. ⏳ Refactor Weather widget for themes
+10. ⏳ Refactor METAR widget for themes
+11. ⏳ Add Wood theme background to main page
+12. ⏳ Add theme selector to admin panel
+13. ⏳ Update config API for theme persistence
+14. ⏳ Add mountain background image
+15. ⏳ Test all themes
+
+### Future Theme Enhancements
+- Time-based theme switching (day/night)
+- Seasonal theme variants
+- Custom user-uploaded backgrounds for Wood theme
+- Theme preview in admin panel
+
 ## Future Considerations
 
-- Multiple display layouts/themes
 - Additional data sources (news, stocks, etc.)
 - Mobile app for quick admin access
 - Multiple board configurations for different displays
+- Restore Google Photos functionality with better error handling
