@@ -21,20 +21,39 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Test if vcgencmd works
-echo "Testing display control command..."
-if ! command -v vcgencmd &> /dev/null; then
-    echo -e "${RED}ERROR: vcgencmd not found${NC}"
-    echo "This script requires vcgencmd, which should be available on Raspberry Pi."
+# Detect which display control method to use
+echo "Detecting display control method..."
+CONTROL_METHOD=""
+CONTROL_CMD_OFF=""
+CONTROL_CMD_ON=""
+
+# Try vcgencmd first
+if command -v vcgencmd &> /dev/null && vcgencmd display_power > /dev/null 2>&1; then
+    CONTROL_METHOD="vcgencmd"
+    CONTROL_CMD_OFF="/usr/bin/vcgencmd display_power 0"
+    CONTROL_CMD_ON="/usr/bin/vcgencmd display_power 1"
+    echo -e "${GREEN}✓ Using vcgencmd${NC}"
+# Try xset (for X server / kiosk mode)
+elif command -v xset &> /dev/null; then
+    CONTROL_METHOD="xset"
+    CONTROL_CMD_OFF="DISPLAY=:0 /usr/bin/xset dpms force off"
+    CONTROL_CMD_ON="DISPLAY=:0 /usr/bin/xset dpms force on"
+    echo -e "${GREEN}✓ Using xset (X server DPMS)${NC}"
+# Try tvservice
+elif command -v tvservice &> /dev/null; then
+    CONTROL_METHOD="tvservice"
+    CONTROL_CMD_OFF="/usr/bin/tvservice -o"
+    CONTROL_CMD_ON="/usr/bin/tvservice -p && /bin/fbset -depth 8 && /bin/fbset -depth 16"
+    echo -e "${GREEN}✓ Using tvservice${NC}"
+else
+    echo -e "${RED}ERROR: No display control method found${NC}"
+    echo "Please run scripts/test-display-control.sh to find a working method"
     exit 1
 fi
 
-# Test display control
-if vcgencmd display_power > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Display control command working${NC}"
-else
-    echo -e "${YELLOW}Warning: Could not test display control${NC}"
-fi
+echo "  Method: $CONTROL_METHOD"
+echo "  OFF command: $CONTROL_CMD_OFF"
+echo "  ON command: $CONTROL_CMD_ON"
 
 echo ""
 echo "Schedule to be configured:"
@@ -56,7 +75,7 @@ echo -e "${GREEN}✓ Backup created: $BACKUP_FILE${NC}"
 CURRENT_CRON=$(crontab -l 2>/dev/null || echo "")
 
 # Check if display schedule already exists
-if echo "$CURRENT_CRON" | grep -q "vcgencmd display_power"; then
+if echo "$CURRENT_CRON" | grep -q -E "vcgencmd display_power|xset dpms force|tvservice -[op]"; then
     echo -e "${YELLOW}Display schedule entries already exist in crontab${NC}"
     echo ""
     read -p "Do you want to remove existing entries and add fresh ones? (y/N): " -n 1 -r
@@ -68,7 +87,7 @@ if echo "$CURRENT_CRON" | grep -q "vcgencmd display_power"; then
 
     # Remove existing display schedule entries
     echo "Removing existing display schedule entries..."
-    CURRENT_CRON=$(echo "$CURRENT_CRON" | grep -v "vcgencmd display_power" | grep -v "JasBoard Display Schedule")
+    CURRENT_CRON=$(echo "$CURRENT_CRON" | grep -v -E "vcgencmd display_power|xset dpms force|tvservice -[op]|JasBoard Display Schedule")
 fi
 
 # Create new cron entries
@@ -85,19 +104,19 @@ if [ -n "$CURRENT_CRON" ]; then
 fi
 
 # Add display schedule entries
-cat >> "$TEMP_CRON" << 'EOF'
-# JasBoard Display Schedule
+cat >> "$TEMP_CRON" << EOF
+# JasBoard Display Schedule (using $CONTROL_METHOD)
 # Monday-Friday: Turn ON at 6am
-0 6 * * 1-5 /usr/bin/vcgencmd display_power 1 > /dev/null 2>&1
+0 6 * * 1-5 $CONTROL_CMD_ON > /dev/null 2>&1
 
 # Monday-Friday: Turn OFF at 9pm
-0 21 * * 1-5 /usr/bin/vcgencmd display_power 0 > /dev/null 2>&1
+0 21 * * 1-5 $CONTROL_CMD_OFF > /dev/null 2>&1
 
 # Saturday-Sunday: Turn ON at 10am
-0 10 * * 0,6 /usr/bin/vcgencmd display_power 1 > /dev/null 2>&1
+0 10 * * 0,6 $CONTROL_CMD_ON > /dev/null 2>&1
 
 # Saturday-Sunday: Turn OFF at 9pm
-0 21 * * 0,6 /usr/bin/vcgencmd display_power 0 > /dev/null 2>&1
+0 21 * * 0,6 $CONTROL_CMD_OFF > /dev/null 2>&1
 EOF
 
 # Install new crontab
@@ -116,15 +135,17 @@ echo ""
 
 # Test the commands
 echo "Testing display control..."
-echo "Current display power state:"
-vcgencmd display_power
+if [ "$CONTROL_METHOD" = "vcgencmd" ]; then
+    echo "Current display power state:"
+    vcgencmd display_power
+fi
 
 echo ""
 echo -e "${GREEN}Setup complete!${NC}"
 echo ""
-echo "Manual control commands:"
-echo "  Turn display ON:  vcgencmd display_power 1"
-echo "  Turn display OFF: vcgencmd display_power 0"
+echo "Manual control commands (using $CONTROL_METHOD):"
+echo "  Turn display ON:  $CONTROL_CMD_ON"
+echo "  Turn display OFF: $CONTROL_CMD_OFF"
 echo ""
 echo "To view your cron jobs:"
 echo "  crontab -l"
