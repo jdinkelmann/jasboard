@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 
 // Force dynamic rendering for admin page
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 interface Config {
+  theme?: 'default' | 'epaper' | 'wood';
   calendarIds: string[];
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
@@ -26,6 +26,7 @@ interface Config {
 }
 
 const defaultConfig: Config = {
+  theme: 'default',
   calendarIds: [],
   photoAlbumIds: [],
   selectedPhotos: [],
@@ -50,9 +51,6 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
   const [oauthMessage, setOauthMessage] = useState('');
-  const [pickerMessage, setPickerMessage] = useState('');
-  const [pickingPhotos, setPickingPhotos] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConfig();
@@ -112,74 +110,6 @@ export default function AdminPage() {
     }
   };
 
-  const startPhotoPicker = async () => {
-    setPickingPhotos(true);
-    setPickerMessage('Creating picker session...');
-
-    try {
-      // Create picker session
-      const response = await fetch('/api/photos/picker/create', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create picker session');
-      }
-
-      const { sessionId, pickerUri } = await response.json();
-      setCurrentSessionId(sessionId);
-
-      // Open picker in new window
-      const pickerWindow = window.open(pickerUri, 'photopicker', 'width=1000,height=800');
-      setPickerMessage('Select your photos in the popup window...');
-
-      // Poll for completion
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`/api/photos/picker/status?sessionId=${sessionId}`);
-          if (statusResponse.ok) {
-            const { mediaItemsSet } = await statusResponse.json();
-
-            if (mediaItemsSet) {
-              clearInterval(pollInterval);
-              pickerWindow?.close();
-
-              // Retrieve selected photos
-              setPickerMessage('Retrieving selected photos...');
-              const itemsResponse = await fetch(`/api/photos/picker/items?sessionId=${sessionId}`);
-
-              if (itemsResponse.ok) {
-                const { photos, count } = await itemsResponse.json();
-                setConfig({
-                  ...config,
-                  selectedPhotos: photos,
-                });
-                setPickerMessage(`Successfully selected ${count} photo(s)!`);
-                fetchConfig(); // Refresh config
-              }
-
-              setPickingPhotos(false);
-              setCurrentSessionId(null);
-            }
-          }
-        } catch (error) {
-          console.error('Error polling session:', error);
-        }
-      }, 3000); // Poll every 3 seconds
-
-      // Stop polling after 5 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        setPickingPhotos(false);
-        setPickerMessage('Picker session timed out');
-      }, 300000);
-    } catch (error) {
-      console.error('Failed to start photo picker:', error);
-      setPickerMessage('Failed to start photo picker');
-      setPickingPhotos(false);
-    }
-  };
-
   const saveConfig = async () => {
     setSaving(true);
     setMessage('');
@@ -215,6 +145,43 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">JasBoard Admin</h1>
+
+        {/* Theme Selection */}
+        <section className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Theme</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Select Theme
+              </label>
+              <select
+                className="w-full bg-gray-700 rounded p-3 text-white"
+                value={config.theme || 'default'}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    theme: e.target.value as 'default' | 'epaper' | 'wood',
+                  })
+                }
+              >
+                <option value="default">Default - Dark background with vibrant gradients</option>
+                <option value="epaper">E-paper - Clean white background with pastels</option>
+                <option value="wood">Wood - Immersive nature background with transparency</option>
+              </select>
+            </div>
+            <div className="text-sm text-gray-400">
+              <p className="mb-2">Theme preview:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>Default:</strong> Current design with dark background and colorful widget gradients</li>
+                <li><strong>E-paper:</strong> White background with soft pastel colors, ideal for bright rooms</li>
+                <li><strong>Wood:</strong> Mountain background image with semi-transparent widgets and backdrop blur</li>
+              </ul>
+              <p className="mt-2 text-xs">
+                Changes apply immediately after saving. Visit the <a href="/" className="text-blue-400 hover:text-blue-300">main dashboard</a> to preview.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* Google Authentication */}
         <section className="bg-gray-800 rounded-lg p-6 mb-6 border-2 border-blue-600">
@@ -298,83 +265,17 @@ export default function AdminPage() {
           </div>
         </section>
 
-        {/* Google Photos */}
-        <section className="bg-gray-800 rounded-lg p-6 mb-6">
+        {/* Google Photos - Disabled for now */}
+        <section className="bg-gray-800 rounded-lg p-6 mb-6 opacity-50">
           <h2 className="text-2xl font-semibold mb-4">Google Photos</h2>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Select Photos
-              </label>
-
-              {authStatus !== 'authenticated' && (
-                <p className="text-gray-400 text-sm mb-2">
-                  Connect to Google above to select photos
-                </p>
-              )}
-
-              {authStatus === 'authenticated' && (
-                <div className="space-y-4">
-                  <button
-                    onClick={startPhotoPicker}
-                    disabled={pickingPhotos}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-3 rounded-lg font-semibold w-full"
-                  >
-                    {pickingPhotos ? 'Selecting Photos...' : 'Select Photos from Google Photos'}
-                  </button>
-
-                  {pickerMessage && (
-                    <div className="p-3 rounded bg-blue-900 text-blue-200 text-sm">
-                      {pickerMessage}
-                    </div>
-                  )}
-
-                  {config.selectedPhotos && config.selectedPhotos.length > 0 && (
-                    <div>
-                      <div className="text-sm text-gray-400 mb-2">
-                        {config.selectedPhotos.length} photo(s) selected
-                      </div>
-                      <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto bg-gray-700 rounded p-2">
-                        {config.selectedPhotos.slice(0, 20).map((photo) => (
-                          <Image 
-                           src={photo.url}
-                            alt={photo.alt}
-                            key={photo.id}
-                            width={500}
-                            height={300}
-                            className="w-full h-24 object-cover rounded"
-                          />
-                        ))}
-                      </div>
-                      {config.selectedPhotos.length > 20 && (
-                        <div className="text-xs text-gray-400 mt-2">
-                          Showing first 20 of {config.selectedPhotos.length} photos
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Refresh interval (minutes)
-              </label>
-              <input
-                type="number"
-                className="w-32 bg-gray-700 rounded p-2"
-                value={config.refreshIntervals.photos}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    refreshIntervals: {
-                      ...config.refreshIntervals,
-                      photos: parseInt(e.target.value) || 60,
-                    },
-                  })
-                }
-              />
+            <div className="p-4 rounded bg-gray-700 text-gray-300">
+              <p className="text-sm">
+                📷 Photos widget is currently disabled. The placeholder &quot;Photos Coming Soon&quot; message will display on the dashboard.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                Photo functionality will be restored in a future update.
+              </p>
             </div>
           </div>
         </section>

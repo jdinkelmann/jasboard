@@ -3,14 +3,55 @@
 @tailwind utilities;
 
 :root {
+  /* Legacy variables for backward compatibility */
   --background: #0a0a0a;
   --foreground: #ededed;
+
+  /* Theme CSS Variables - defaults set here, overridden by ThemeProvider */
+  /* Page-level colors */
+  --theme-page-bg: #000000;
+  --theme-page-text: #ffffff;
+
+  /* Calendar widget colors */
+  --theme-calendar-bg: #000000;
+  --theme-calendar-text: #ffffff;
+  --theme-calendar-grid-border: #374151;
+  --theme-calendar-today: #dc2626;
+  --theme-calendar-event: #d1d5db;
+
+  /* Weather widget colors */
+  --theme-weather-bg: linear-gradient(to bottom right, #1e3a8a, #1d4ed8);
+  --theme-weather-text: #ffffff;
+  --theme-weather-accent: #dbeafe;
+
+  /* METAR widget colors */
+  --theme-metar-bg: linear-gradient(to bottom right, #581c87, #7e22ce);
+  --theme-metar-text: #ffffff;
+  --theme-metar-accent: #e9d5ff;
+
+  /* Photos widget colors */
+  --theme-photos-bg: #111827;
+  --theme-photos-text: #9ca3af;
+  --theme-photos-border: #374151;
+
+  /* Theme properties */
+  --theme-widget-opacity: 1;
+  --theme-backdrop-blur: 0px;
+  --theme-border-radius: 8px;
+
+  /* Background image (set by Wood theme) */
+  --theme-bg-image: none;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--theme-page-text);
+  background: var(--theme-page-bg);
   font-family: Arial, Helvetica, sans-serif;
+  background-image: var(--theme-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 /* Portrait mode optimization */

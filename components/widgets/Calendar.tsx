@@ -57,10 +57,21 @@ export default function Calendar() {
 
   if (loading) {
     return (
-      <div className="bg-black rounded-lg p-4 h-full animate-pulse">
+      <div
+        className="rounded-lg p-4 h-full animate-pulse backdrop-blur-theme"
+        style={{
+          background: 'var(--theme-calendar-bg)',
+          borderRadius: 'var(--theme-border-radius)',
+          opacity: 'var(--theme-widget-opacity)',
+        }}
+      >
         <div className="grid grid-cols-7 gap-1 h-full">
           {Array.from({ length: 35 }).map((_, i) => (
-            <div key={i} className="bg-gray-900 rounded"></div>
+            <div
+              key={i}
+              className="rounded opacity-50"
+              style={{ background: 'var(--theme-calendar-grid-border)' }}
+            ></div>
           ))}
         </div>
       </div>
@@ -71,7 +82,15 @@ export default function Calendar() {
   const today = new Date();
 
   return (
-    <div className="bg-black text-white h-full flex flex-col overflow-hidden">
+    <div
+      className="h-full flex flex-col overflow-hidden rounded-lg backdrop-blur-theme"
+      style={{
+        background: 'var(--theme-calendar-bg)',
+        color: 'var(--theme-calendar-text)',
+        borderRadius: 'var(--theme-border-radius)',
+        opacity: 'var(--theme-widget-opacity)',
+      }}
+    >
       {/* Date range header */}
       <div className="text-center py-2 text-lg font-semibold">
         {format(calendarStart, 'MMM d')} - {format(addWeeks(calendarStart, 4), 'MMM d, yyyy')}
@@ -80,16 +99,29 @@ export default function Calendar() {
       {/* Calendar grid */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-px bg-gray-800 border-b border-gray-700">
+        <div
+          className="grid grid-cols-7 gap-px border-b"
+          style={{
+            background: 'var(--theme-calendar-grid-border)',
+            borderColor: 'var(--theme-calendar-grid-border)',
+          }}
+        >
           {weekDays.map((day, i) => (
-            <div key={i} className="bg-black text-center py-2 text-sm font-semibold text-gray-400">
+            <div
+              key={i}
+              className="text-center py-2 text-sm font-semibold opacity-70"
+              style={{ background: 'var(--theme-calendar-bg)' }}
+            >
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar days */}
-        <div className="flex-1 grid grid-cols-7 gap-px bg-gray-800 overflow-auto">
+        <div
+          className="flex-1 grid grid-cols-7 gap-px overflow-auto"
+          style={{ background: 'var(--theme-calendar-grid-border)' }}
+        >
           {calendarDays.map((day, i) => {
             const dayEvents = getEventsForDay(day);
             const isToday = isSameDay(day, today);
@@ -97,16 +129,20 @@ export default function Calendar() {
             return (
               <div
                 key={i}
-                className="bg-black p-1 flex flex-col min-h-[80px]"
+                className="p-1 flex flex-col min-h-[80px]"
+                style={{ background: 'var(--theme-calendar-bg)' }}
               >
                 {/* Date number */}
                 <div className="flex justify-center mb-1">
                   {isToday ? (
-                    <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: 'var(--theme-calendar-today)' }}
+                    >
                       <span className="text-xl font-bold">{format(day, 'd')}</span>
                     </div>
                   ) : (
-                    <span className="text-2xl font-semibold text-gray-300">
+                    <span className="text-2xl font-semibold opacity-90">
                       {format(day, 'd')}
                     </span>
                   )}
@@ -115,7 +151,11 @@ export default function Calendar() {
                 {/* Events for this day */}
                 <div className="flex-1 overflow-hidden text-xs space-y-0.5">
                   {dayEvents.map((event) => (
-                    <div key={event.id} className="text-gray-300 truncate leading-tight">
+                    <div
+                      key={event.id}
+                      className="truncate leading-tight"
+                      style={{ color: 'var(--theme-calendar-event)' }}
+                    >
                       {!event.allDay && format(parseISO(event.start), 'h:mma')} {event.title}
                     </div>
                   ))}
