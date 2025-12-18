@@ -7,7 +7,7 @@
  * 3. Wood - Immersive nature background with semi-transparent widgets
  */
 
-export type ThemeId = 'default' | 'epaper' | 'wood';
+export type ThemeId = 'default' | 'epaper' | 'wood' | 'dashboard';
 
 export interface ThemeDefinition {
   id: ThemeId;
