@@ -62,7 +62,7 @@ export function ThemeProvider({ children, initialTheme = 'default' }: ThemeProvi
     }
   }, []);
 
-  // Fetch theme from server config
+  // Fetch theme from server config and apply custom background image
   useEffect(() => {
     const fetchTheme = async () => {
       try {
@@ -71,6 +71,11 @@ export function ThemeProvider({ children, initialTheme = 'default' }: ThemeProvi
           const config = await response.json();
           if (config.theme) {
             setThemeId(config.theme);
+          }
+          // Apply custom background image if provided
+          if (config.backgroundImageUrl) {
+            const root = document.documentElement;
+            root.style.setProperty('--theme-bg-image', `url(${config.backgroundImageUrl})`);
           }
         }
       } catch (error) {

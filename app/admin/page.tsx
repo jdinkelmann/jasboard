@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 interface Config {
-  theme?: 'default' | 'epaper' | 'wood';
+  theme?: 'default' | 'epaper' | 'wood' | 'dashboard';
+  backgroundImageUrl?: string;
   calendarIds: string[];
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
@@ -27,6 +28,7 @@ interface Config {
 
 const defaultConfig: Config = {
   theme: 'default',
+  backgroundImageUrl: undefined,
   calendarIds: [],
   photoAlbumIds: [],
   selectedPhotos: [],
@@ -160,13 +162,14 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    theme: e.target.value as 'default' | 'epaper' | 'wood',
+                    theme: e.target.value as 'default' | 'epaper' | 'wood' | 'dashboard',
                   })
                 }
               >
                 <option value="default">Default - Dark background with vibrant gradients</option>
                 <option value="epaper">E-paper - Clean white background with pastels</option>
                 <option value="wood">Wood - Immersive nature background with transparency</option>
+                <option value="dashboard">Dashboard - Customizable background image with dark widgets</option>
               </select>
             </div>
             <div className="text-sm text-gray-400">
@@ -175,11 +178,52 @@ export default function AdminPage() {
                 <li><strong>Default:</strong> Current design with dark background and colorful widget gradients</li>
                 <li><strong>E-paper:</strong> White background with soft pastel colors, ideal for bright rooms</li>
                 <li><strong>Wood:</strong> Mountain background image with semi-transparent widgets and backdrop blur</li>
+                <li><strong>Dashboard:</strong> Customizable background image with dark semi-transparent widgets</li>
               </ul>
               <p className="mt-2 text-xs">
                 Changes apply immediately after saving. Visit the <a href="/" className="text-blue-400 hover:text-blue-300">main dashboard</a> to preview.
               </p>
             </div>
+
+            {/* Background Image Customization - shown when Dashboard theme is selected */}
+            {config.theme === 'dashboard' && (
+              <div className="mt-6 pt-6 border-t border-gray-700">
+                <h3 className="text-lg font-semibold mb-4">Background Image</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Image URL
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-700 rounded p-3 text-white text-sm"
+                    value={config.backgroundImageUrl || ''}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        backgroundImageUrl: e.target.value || undefined,
+                      })
+                    }
+                    placeholder="https://example.com/your-background-image.jpg"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">
+                    Enter a publicly accessible image URL. Recommended: landscape images at least 1080x1920px for portrait displays.
+                  </p>
+                  {config.backgroundImageUrl && (
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-400 mb-2">Preview:</p>
+                      <img
+                        src={config.backgroundImageUrl}
+                        alt="Background preview"
+                        className="w-full h-40 object-cover rounded border border-gray-600"
+                        onError={() => {
+                          console.error('Failed to load image');
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

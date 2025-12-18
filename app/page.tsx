@@ -3,6 +3,7 @@
 import Default from './themes/default';
 import Paper from './themes/paper';
 import Wood from './themes/wood';
+import Dashboard from './themes/dashboard';
 import { useTheme } from '../lib/themes/ThemeContext';
 import { ComponentType } from 'react';
 
@@ -11,6 +12,7 @@ const THEME_COMPONENTS: Record<string, ComponentType> = {
   default: Default,
   epaper: Paper,
   wood: Wood,
+  dashboard: Dashboard,
 };
 
 /**

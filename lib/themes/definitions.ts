@@ -7,7 +7,7 @@
  * 3. Wood - Immersive nature background with semi-transparent widgets
  */
 
-export type ThemeId = 'default' | 'epaper' | 'wood';
+export type ThemeId = 'default' | 'epaper' | 'wood' | 'dashboard';
 
 export interface ThemeDefinition {
   id: ThemeId;
@@ -160,12 +160,50 @@ export const woodTheme: ThemeDefinition = {
 };
 
 /**
+ * Dashboard Theme - Customizable background with dark semi-transparent widgets
+ */
+export const dashboardTheme: ThemeDefinition = {
+  id: 'dashboard',
+  name: 'Dashboard',
+  description: 'Customizable background image with dark semi-transparent widgets',
+  colors: {
+    pageBackground: '#0a0a0a', // Very dark fallback
+    pageText: '#ffffff',
+
+    calendarBackground: 'rgba(0, 0, 0, 0.6)', // Semi-transparent dark
+    calendarText: '#ffffff',
+    calendarGridBorder: 'rgba(255, 255, 255, 0.15)',
+    calendarTodayHighlight: '#ef4444', // red-500
+    calendarEventText: '#e5e7eb', // gray-200
+
+    weatherBackground: 'rgba(0, 0, 0, 0.65)', // Slightly darker for contrast
+    weatherText: '#ffffff',
+    weatherAccent: '#bfdbfe', // blue-200
+
+    metarBackground: 'rgba(0, 0, 0, 0.65)',
+    metarText: '#ffffff',
+    metarAccent: '#fcd34d', // amber-300
+
+    photosBackground: 'rgba(0, 0, 0, 0.6)',
+    photosText: '#e5e7eb', // gray-200
+    photosBorder: 'rgba(255, 255, 255, 0.15)',
+  },
+  properties: {
+    widgetOpacity: 1, // Cards handle their own opacity
+    widgetBackdropBlur: '8px',
+    borderRadius: '10px',
+    backgroundImage: undefined, // Will be set from config
+  },
+};
+
+/**
  * All available themes
  */
 export const themes: Record<ThemeId, ThemeDefinition> = {
   default: defaultTheme,
   epaper: epaperTheme,
   wood: woodTheme,
+  dashboard: dashboardTheme,
 };
 
 /**
