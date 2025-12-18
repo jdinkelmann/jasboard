@@ -28,6 +28,7 @@ interface Config {
 
 const defaultConfig: Config = {
   theme: 'default',
+  backgroundImageUrl: undefined,
   calendarIds: [],
   photoAlbumIds: [],
   selectedPhotos: [],
