@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice">
+  <!-- Sky gradient -->
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1410;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2d2416;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3d3020;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mountainGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a3f2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d2416;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mountainGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3d3020;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1410;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1080" height="1920" fill="url(#skyGradient)"/>
+
+  <!-- Mountain range (far) -->
+  <path d="M 0 1200 L 200 800 L 400 950 L 600 700 L 800 900 L 1080 750 L 1080 1920 L 0 1920 Z"
+        fill="url(#mountainGradient2)" opacity="0.6"/>
+
+  <!-- Mountain range (near) -->
+  <path d="M 0 1400 L 150 1000 L 350 1150 L 540 850 L 750 1100 L 900 950 L 1080 1050 L 1080 1920 L 0 1920 Z"
+        fill="url(#mountainGradient1)" opacity="0.8"/>
+
+  <!-- Foreground hills -->
+  <path d="M 0 1600 L 300 1400 L 600 1500 L 900 1350 L 1080 1450 L 1080 1920 L 0 1920 Z"
+        fill="#2d2416"/>
+
+  <!-- Add some texture with subtle noise -->
+  <filter id="noise">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+    <feBlend mode="multiply" in="SourceGraphic"/>
+  </filter>
+  <rect width="1080" height="1920" fill="#1a1410" opacity="0.1" filter="url(#noise)"/>
+</svg>
