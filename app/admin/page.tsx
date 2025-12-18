@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 interface Config {
-  theme?: 'default' | 'epaper' | 'wood';
+  theme?: 'default' | 'epaper' | 'wood' | 'dashboard';
+  backgroundImageUrl?: string;
   calendarIds: string[];
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
