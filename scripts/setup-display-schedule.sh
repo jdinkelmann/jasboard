@@ -30,9 +30,16 @@ CONTROL_CMD_ON=""
 # Try xset first (for X server / kiosk mode) - most reliable for Pi with GUI
 if command -v xset &> /dev/null; then
     CONTROL_METHOD="xset"
-    CONTROL_CMD_OFF="DISPLAY=:0 /usr/bin/xset dpms force off"
-    CONTROL_CMD_ON="DISPLAY=:0 /usr/bin/xset dpms force on"
-    echo -e "${GREEN}✓ Using xset (X server DPMS)${NC}"
+    # Get the absolute path to the wrapper script
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    WRAPPER_SCRIPT="$SCRIPT_DIR/display-control.sh"
+
+    # Make wrapper script executable
+    chmod +x "$WRAPPER_SCRIPT" 2>/dev/null || true
+
+    CONTROL_CMD_OFF="$WRAPPER_SCRIPT off"
+    CONTROL_CMD_ON="$WRAPPER_SCRIPT on"
+    echo -e "${GREEN}✓ Using xset (X server DPMS) via wrapper script${NC}"
 # Try vcgencmd (for headless Pi or console mode)
 elif command -v vcgencmd &> /dev/null && vcgencmd display_power > /dev/null 2>&1; then
     CONTROL_METHOD="vcgencmd"
