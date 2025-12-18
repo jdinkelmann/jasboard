@@ -200,10 +200,44 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
 - Main installer: `/install.sh`
 - Update script: `/update.sh`
 - Kiosk setup: `/scripts/setup-kiosk.sh`
+- Display schedule: `/scripts/setup-display-schedule.sh`
 - Systemd service: `/etc/systemd/system/jasboard.service`
 - Install directory: `~/jasboard`
 - Environment config: `~/jasboard/.env.local`
 - User config: `~/jasboard/config.json`
+
+### Display Schedule (Auto On/Off)
+
+**Setup automatic monitor scheduling:**
+```bash
+cd ~/jasboard
+bash scripts/setup-display-schedule.sh
+```
+
+**Default schedule:**
+- Monday-Friday: ON at 6am, OFF at 9pm
+- Saturday-Sunday: ON at 10am, OFF at 9pm
+
+**Manual control:**
+```bash
+# Turn display ON
+vcgencmd display_power 1
+
+# Turn display OFF
+vcgencmd display_power 0
+
+# Check current state
+vcgencmd display_power
+```
+
+**Modify schedule:**
+```bash
+# Edit crontab
+crontab -e
+
+# View current schedule
+crontab -l
+```
 
 ### Common Issues and Solutions
 
