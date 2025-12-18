@@ -27,19 +27,19 @@ CONTROL_METHOD=""
 CONTROL_CMD_OFF=""
 CONTROL_CMD_ON=""
 
-# Try vcgencmd first
-if command -v vcgencmd &> /dev/null && vcgencmd display_power > /dev/null 2>&1; then
-    CONTROL_METHOD="vcgencmd"
-    CONTROL_CMD_OFF="/usr/bin/vcgencmd display_power 0"
-    CONTROL_CMD_ON="/usr/bin/vcgencmd display_power 1"
-    echo -e "${GREEN}✓ Using vcgencmd${NC}"
-# Try xset (for X server / kiosk mode)
-elif command -v xset &> /dev/null; then
+# Try xset first (for X server / kiosk mode) - most reliable for Pi with GUI
+if command -v xset &> /dev/null; then
     CONTROL_METHOD="xset"
     CONTROL_CMD_OFF="DISPLAY=:0 /usr/bin/xset dpms force off"
     CONTROL_CMD_ON="DISPLAY=:0 /usr/bin/xset dpms force on"
     echo -e "${GREEN}✓ Using xset (X server DPMS)${NC}"
-# Try tvservice
+# Try vcgencmd (for headless Pi or console mode)
+elif command -v vcgencmd &> /dev/null && vcgencmd display_power > /dev/null 2>&1; then
+    CONTROL_METHOD="vcgencmd"
+    CONTROL_CMD_OFF="/usr/bin/vcgencmd display_power 0"
+    CONTROL_CMD_ON="/usr/bin/vcgencmd display_power 1"
+    echo -e "${GREEN}✓ Using vcgencmd${NC}"
+# Try tvservice as last resort
 elif command -v tvservice &> /dev/null; then
     CONTROL_METHOD="tvservice"
     CONTROL_CMD_OFF="/usr/bin/tvservice -o"
