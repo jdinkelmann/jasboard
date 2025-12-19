@@ -192,7 +192,7 @@ export const dashboardTheme: ThemeDefinition = {
     widgetOpacity: 1, // Cards handle their own opacity
     widgetBackdropBlur: '8px',
     borderRadius: '10px',
-    backgroundImage: undefined, // Will be set from config
+    backgroundImage: '/images/christmas.png', // Will be set from config
   },
 };
 

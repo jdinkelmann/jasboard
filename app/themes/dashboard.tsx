@@ -40,9 +40,7 @@ export default function Dashboard() {
         </section>
 
         {/* Weather widget */}
-        <section className="flex-shrink-0">
-          <Weather />
-        </section>
+        
 
         {/* Calendar in middle - takes most space */}
         <section className="flex-grow min-h-0">
@@ -50,7 +48,8 @@ export default function Dashboard() {
         </section>
 
         {/* Bottom section: METAR */}
-        <section className="flex-shrink-0">
+        <section className="flex-shrink-0 grid grid-cols-2 gap-4 h-64">
+          <Weather />
           <Metar />
         </section>
       </div>
