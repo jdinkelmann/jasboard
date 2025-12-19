@@ -33,20 +33,20 @@ function formatClouds(clouds: Array<{ cover: string; base: number }>): string {
   const coverType = significantLayer.cover === 'BKN' ? 'Broken' : 'Overcast';
   const altitude = significantLayer.base.toLocaleString();
 
-  return `${coverType} ${altitude} ft`;
+  return `${coverType} ${altitude}'`;
 }
 
-// Get background color based on flight category (standard aviation colors)
+// Get background color based on flight category (standard aviation colors with transparency)
 function getFlightCategoryColor(category: string): string {
   switch (category) {
     case 'VFR':
-      return 'linear-gradient(to bottom right, #16a34a, #22c55e)'; // Green
+      return 'linear-gradient(to bottom right, rgba(22, 163, 74, 0.8), rgba(34, 197, 94, 0.1))'; // Green
     case 'MVFR':
-      return 'linear-gradient(to bottom right, #2563eb, #3b82f6)'; // Blue
+      return 'linear-gradient(to bottom right, rgba(37, 99, 235, 0.8), rgba(59, 130, 246, 0.1))'; // Blue
     case 'IFR':
-      return 'linear-gradient(to bottom right, #dc2626, #ef4444)'; // Red
+      return 'linear-gradient(to bottom right, rgba(220, 38, 38, 0.8), rgba(239, 68, 68, 0.1))'; // Red
     case 'LIFR':
-      return 'linear-gradient(to bottom right, #c026d3, #d946ef)'; // Magenta
+      return 'linear-gradient(to bottom right, rgba(192, 38, 211, 0.8), rgba(217, 70, 239, 0.1))'; // Magenta
     default:
       return 'var(--theme-metar-bg)'; // Fallback to theme color
   }

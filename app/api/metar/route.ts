@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 900;
 
 // Simple METAR parser (basic parsing - can be enhanced with a library if needed)
-function getConditions(condition: string) {
+function getConditions(condition: string | null | undefined): string {
+  // Handle undefined/null conditions (clear skies)
+  if (!condition) return 'Clear';
 
   // Determine conditions from weather codes
   let conditions = 'Clear';

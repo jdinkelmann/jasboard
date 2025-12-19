@@ -55,6 +55,26 @@ export default function Calendar() {
     });
   };
 
+  const formatDayEventTimes = (start: string) => {
+    // Try parsing with AM/PM
+  let d = parseISO(start);
+
+  // If parsing fails (missing AM/PM), assume PM for example or define your rule
+  if (!d) {
+    d = parseISO(start + " PM");
+  }
+
+  const minutes = format(d, "mm");
+
+  if (minutes === "00") {
+    // collapse minutes → "3p"
+    return format(d, "haaaaa").toLowerCase();
+  }
+
+  // keep minutes → "2:45p"
+  return format(d, "h:mmaaaaa").toLowerCase();
+  };
+
   if (loading) {
     return (
       <div
@@ -93,7 +113,7 @@ export default function Calendar() {
     >
       {/* Date range header */}
       <div className="text-center py-2 text-lg font-semibold">
-        {format(calendarStart, 'MMM d')} - {format(addWeeks(calendarStart, 4), 'MMM d, yyyy')}
+        {format(calendarStart, 'MMMM d')} - {format(addWeeks(calendarStart, 4), 'MMMM d, yyyy')}
       </div>
 
       {/* Calendar grid */}
@@ -133,30 +153,36 @@ export default function Calendar() {
                 style={{ background: 'var(--theme-calendar-bg)' }}
               >
                 {/* Date number */}
-                <div className="flex justify-center mb-1">
+                <div className="flex justify-center mb-3 mt-1">
                   {isToday ? (
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center"
                       style={{ background: 'var(--theme-calendar-today)' }}
                     >
-                      <span className="text-xl font-bold">{format(day, 'd')}</span>
+                      <span className="text-3xl font-bold">{format(day, 'd')}</span>
                     </div>
                   ) : (
-                    <span className="text-2xl font-semibold opacity-90">
+                    <span className="text-4xl opacity-90">
                       {format(day, 'd')}
                     </span>
                   )}
                 </div>
 
                 {/* Events for this day */}
-                <div className="flex-1 overflow-hidden text-xs space-y-0.5">
+                <div className="flex-1 overflow-hidden text-xs space-y-0.5 mb-3 px-2">
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className="truncate leading-tight"
+                      className="leading-tight mb-1"
                       style={{ color: 'var(--theme-calendar-event)' }}
                     >
-                      {!event.allDay && format(parseISO(event.start), 'h:mma')} {event.title}
+                      {!event.allDay && (
+                        <>
+                          <span style={{ backgroundColor: '#fff', width: '8px', height: '8px', display: 'inline-block', top: '2px', position: 'relative', marginRight: '3px' }} className='rounded-full'>&nbsp;</span>
+                          {formatDayEventTimes(event.start)}{' '}
+                        </>
+                      )}
+                      {event.title}
                     </div>
                   ))}
                 </div>
