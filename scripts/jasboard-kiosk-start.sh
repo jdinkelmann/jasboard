@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Wait for X server to be fully ready
-sleep 15
+# Wait for X server and services to be ready
+sleep 10
 
-# Rotate display to portrait mode (adjust "left" to "right" if upside down)
+# Rotate display to portrait mode (redundant with /boot/config.txt but needed for Pi 4)
 DISPLAY=:0 xrandr --output HDMI-2 --rotate right
 sleep 2
 
