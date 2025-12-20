@@ -1,8 +1,8 @@
 'use client';
 
-import Weather from 'components/widgets/Weather';
-import Calendar from 'components/widgets/Calendar';
-import Metar from 'components/widgets/Metar';
+import Weather from '../../components/widgets/Weather';
+import Calendar from '../../components/widgets/Calendar';
+import Metar from '../../components/widgets/Metar';
 import { useEffect, useState } from 'react';
 
 export default function Dashboard() {

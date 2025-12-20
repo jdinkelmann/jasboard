@@ -175,7 +175,7 @@ npm ci
 npm run build
 
 # 2. Create package
-Compress-Archive -Path .next,package.json,package-lock.json,next.config.mjs,public -DestinationPath build.zip
+Compress-Archive -Path .next,package.json,package-lock.json,next.config.js,public -DestinationPath build.zip
 
 # 3. Upload
 scp build.zip jas@jasboard.local:/tmp/

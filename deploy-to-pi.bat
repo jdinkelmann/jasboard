@@ -30,7 +30,7 @@ echo.
 
 REM Step 2: Create zip (requires PowerShell)
 echo [2/5] Creating deployment package...
-powershell -Command "Compress-Archive -Path .next,package.json,package-lock.json,next.config.mjs,public -DestinationPath jasboard-build.zip -Force"
+powershell -Command "Compress-Archive -Path .next,package.json,package-lock.json,next.config.js,public -DestinationPath jasboard-build.zip -Force"
 echo PACKAGE CREATED
 echo.
 

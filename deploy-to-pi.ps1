@@ -10,13 +10,16 @@ param(
 Write-Host "🚀 JasBoard Deployment to Raspberry Pi" -ForegroundColor Cyan
 Write-Host "========================================`n" -ForegroundColor Cyan
 
-# Step 1: Clean and build locally
+# Step 1: Build locally
 Write-Host "📦 Building project locally..." -ForegroundColor Yellow
-npm ci
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ npm ci failed" -ForegroundColor Red
-    exit 1
-}
+
+# Skip npm ci - assumes dependencies are already installed
+# Uncomment the lines below if you want to reinstall dependencies
+# npm ci
+# if ($LASTEXITCODE -ne 0) {
+#     Write-Host "❌ npm ci failed" -ForegroundColor Red
+#     exit 1
+# }
 
 npm run build
 if ($LASTEXITCODE -ne 0) {
@@ -32,7 +35,7 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $zipFile = "jasboard-build-$timestamp.zip"
 
 # Create zip with .next folder and necessary files
-Compress-Archive -Path .next,package.json,package-lock.json,next.config.mjs,public -DestinationPath $zipFile -Force
+Compress-Archive -Path .next,package.json,package-lock.json,next.config.js,public -DestinationPath $zipFile -Force
 
 Write-Host "✅ Package created: $zipFile`n" -ForegroundColor Green
 
@@ -63,7 +66,7 @@ echo '✅ Deployment complete!' && \
 sudo systemctl status jasboard --no-pager -l
 "@
 
-ssh "${PiUser}@${PiHost}" $deployScript
+ssh "${PiUser}@${PiHost}" ($deployScript -replace "`r", "")
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Deployment failed" -ForegroundColor Red
     exit 1

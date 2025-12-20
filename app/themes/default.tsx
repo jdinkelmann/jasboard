@@ -1,7 +1,7 @@
-import Weather from 'components/widgets/Weather';
-import Calendar from 'components/widgets/Calendar';
-import Photos from 'components/widgets/Photos';
-import Metar from 'components/widgets/Metar';
+import Weather from '../../components/widgets/Weather';
+import Calendar from '../../components/widgets/Calendar';
+import Photos from '../../components/widgets/Photos';
+import Metar from '../../components/widgets/Metar';
 
 export default function Default() {
   return (
