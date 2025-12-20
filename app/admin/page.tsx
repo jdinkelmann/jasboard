@@ -46,6 +46,15 @@ const defaultConfig: Config = {
   },
 }
 
+interface CalendarInfo {
+  id: string;
+  summary: string;
+  description: string;
+  primary: boolean;
+  backgroundColor?: string;
+  accessRole?: string;
+}
+
 export default function AdminPage() {
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [loading, setLoading] = useState(true);
@@ -53,6 +62,10 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
   const [oauthMessage, setOauthMessage] = useState('');
+  const [availableCalendars, setAvailableCalendars] = useState<CalendarInfo[]>([]);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [calendarError, setCalendarError] = useState('');
+  const [reloadingDisplay, setReloadingDisplay] = useState(false);
 
   useEffect(() => {
     fetchConfig();
@@ -109,6 +122,60 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to initiate OAuth:', error);
       setOauthMessage('Failed to initiate Google OAuth');
+    }
+  };
+
+  const loadAvailableCalendars = async () => {
+    setLoadingCalendars(true);
+    setCalendarError('');
+    try {
+      const response = await fetch('/api/calendars/list');
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableCalendars(data.calendars || []);
+      } else {
+        const errorData = await response.json();
+        setCalendarError(errorData.error || 'Failed to load calendars');
+      }
+    } catch (error) {
+      console.error('Failed to load calendars:', error);
+      setCalendarError('Error loading calendars');
+    } finally {
+      setLoadingCalendars(false);
+    }
+  };
+
+  const toggleCalendar = (calendarId: string) => {
+    const currentIds = config.calendarIds;
+    if (currentIds.includes(calendarId)) {
+      // Remove calendar
+      setConfig({
+        ...config,
+        calendarIds: currentIds.filter(id => id !== calendarId),
+      });
+    } else {
+      // Add calendar
+      setConfig({
+        ...config,
+        calendarIds: [...currentIds, calendarId],
+      });
+    }
+  };
+
+  const reloadDisplay = async () => {
+    setReloadingDisplay(true);
+    try {
+      const response = await fetch('/api/reload', { method: 'POST' });
+      if (response.ok) {
+        setMessage('Display reload requested! The dashboard will refresh in a few seconds.');
+      } else {
+        setMessage('Failed to request display reload');
+      }
+    } catch (error) {
+      console.error('Failed to reload display:', error);
+      setMessage('Error requesting display reload');
+    } finally {
+      setReloadingDisplay(false);
     }
   };
 
@@ -271,12 +338,70 @@ export default function AdminPage() {
         <section className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-2xl font-semibold mb-4">Google Calendar</h2>
           <div className="space-y-4">
+            {/* Calendar Picker */}
+            {authStatus === 'authenticated' && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium">
+                    Select Calendars
+                  </label>
+                  <button
+                    onClick={loadAvailableCalendars}
+                    disabled={loadingCalendars}
+                    className="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded"
+                  >
+                    {loadingCalendars ? 'Loading...' : 'Load My Calendars'}
+                  </button>
+                </div>
+
+                {calendarError && (
+                  <div className="p-3 rounded bg-red-900 text-red-200 text-sm mb-3">
+                    {calendarError}
+                  </div>
+                )}
+
+                {availableCalendars.length > 0 && (
+                  <div className="bg-gray-700 rounded p-4 max-h-64 overflow-y-auto space-y-2">
+                    {availableCalendars.map((cal) => (
+                      <label
+                        key={cal.id}
+                        className="flex items-center gap-3 p-2 hover:bg-gray-600 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={config.calendarIds.includes(cal.id)}
+                          onChange={() => toggleCalendar(cal.id)}
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{cal.summary}</span>
+                            {cal.primary && (
+                              <span className="text-xs bg-blue-600 px-2 py-0.5 rounded">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          {cal.description && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              {cal.description}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Manual Calendar IDs (fallback) */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Calendar IDs (one per line)
+                Or Enter Calendar IDs Manually (one per line)
               </label>
               <textarea
-                className="w-full bg-gray-700 rounded p-3 h-32"
+                className="w-full bg-gray-700 rounded p-3 h-24 text-sm"
                 value={config.calendarIds.join('\n')}
                 onChange={(e) =>
                   setConfig({
@@ -286,7 +411,11 @@ export default function AdminPage() {
                 }
                 placeholder="primary&#10;family@group.calendar.google.com"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Current selection: {config.calendarIds.length} calendar{config.calendarIds.length !== 1 ? 's' : ''}
+              </p>
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Refresh interval (minutes)
@@ -447,20 +576,32 @@ export default function AdminPage() {
           </div>
         </section>
 
-        {/* Save button */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={saveConfig}
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-8 py-3 rounded-lg font-semibold"
-          >
-            {saving ? 'Saving...' : 'Save Configuration'}
-          </button>
-          {message && (
-            <span className={message.includes('success') ? 'text-green-400' : 'text-red-400'}>
-              {message}
-            </span>
-          )}
+        {/* Action buttons */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={saveConfig}
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-8 py-3 rounded-lg font-semibold"
+            >
+              {saving ? 'Saving...' : 'Save Configuration'}
+            </button>
+            <button
+              onClick={reloadDisplay}
+              disabled={reloadingDisplay}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-8 py-3 rounded-lg font-semibold"
+            >
+              {reloadingDisplay ? 'Reloading...' : 'Reload Display'}
+            </button>
+            {message && (
+              <span className={message.includes('success') || message.includes('requested') ? 'text-green-400' : 'text-red-400'}>
+                {message}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-400">
+            Use <strong>Reload Display</strong> to refresh the dashboard on your Pi without restarting the service.
+          </p>
         </div>
 
         {/* Quick links */}

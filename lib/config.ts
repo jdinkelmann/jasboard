@@ -26,6 +26,7 @@ export interface AppConfig {
     refresh_token: string;
     expiry_date: number;
   };
+  reloadRequested?: boolean;
 }
 
 const defaultConfig: AppConfig = {
