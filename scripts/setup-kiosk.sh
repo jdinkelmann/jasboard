@@ -94,8 +94,12 @@ EOF
 cat > "$HOME/.config/jasboard-kiosk-start.sh" << 'EOF'
 #!/bin/bash
 
-# Wait for network and JasBoard service to be ready
+# Wait for X server and services to be ready
 sleep 10
+
+# Rotate display to portrait mode (redundant with /boot/config.txt but needed for Pi 4)
+DISPLAY=:0 xrandr --output HDMI-2 --rotate right
+sleep 2
 
 # Disable screensaver and power management
 bash $HOME/.config/disable-screensaver.sh
@@ -103,12 +107,14 @@ bash $HOME/.config/disable-screensaver.sh
 # Hide mouse cursor (unclutter)
 unclutter -idle 1 -root &
 
-# Wait a bit more for JasBoard service
+# Wait for JasBoard service to be ready
 sleep 5
 
-# Start Chromium in kiosk mode
+# Start Chromium in kiosk mode with explicit window size for portrait mode
 chromium \
   --kiosk \
+  --window-size=1080,1920 \
+  --force-device-scale-factor=1 \
   --noerrdialogs \
   --disable-infobars \
   --disable-session-crashed-bubble \
@@ -126,17 +132,73 @@ print_success "Autostart configured"
 # Display Rotation (Portrait Mode)
 ###############################################################################
 
-print_info "Display is configured for landscape mode by default"
-print_warning "For portrait mode (1080x1920), you need to rotate the display"
-echo ""
-print_info "To rotate display to portrait mode, edit /boot/config.txt:"
-echo "  sudo nano /boot/config.txt"
-echo ""
-echo "Add this line:"
-echo "  display_rotate=1    # 90 degrees (portrait)"
-echo "  # or display_rotate=3  # 270 degrees (inverted portrait)"
-echo ""
-echo "Then reboot: sudo reboot"
+print_info "Configuring display rotation for portrait mode..."
+
+# Detect Pi model
+PI_MODEL=$(cat /proc/device-tree/model 2>/dev/null || echo "Unknown")
+
+if [[ "$PI_MODEL" == *"Raspberry Pi 4"* ]]; then
+    print_warning "Raspberry Pi 4 detected"
+    print_info "Pi 4 requires special display configuration for rotation"
+    echo ""
+fi
+
+# Check if /boot/config.txt exists (could be /boot/firmware/config.txt on newer systems)
+if [ -f /boot/firmware/config.txt ]; then
+    BOOT_CONFIG="/boot/firmware/config.txt"
+elif [ -f /boot/config.txt ]; then
+    BOOT_CONFIG="/boot/config.txt"
+else
+    print_warning "Could not find boot config file"
+    BOOT_CONFIG=""
+fi
+
+if [ -n "$BOOT_CONFIG" ]; then
+    # Backup config
+    sudo cp "$BOOT_CONFIG" "${BOOT_CONFIG}.backup.$(date +%Y%m%d_%H%M%S)"
+
+    # Check if display_rotate is already set
+    if grep -q "^display_rotate=" "$BOOT_CONFIG"; then
+        print_success "display_rotate already configured in $BOOT_CONFIG"
+    else
+        print_info "Adding display_rotate to $BOOT_CONFIG..."
+
+        # Add display_rotate for portrait mode (90 degrees clockwise)
+        echo "" | sudo tee -a "$BOOT_CONFIG" > /dev/null
+        echo "# JasBoard: Portrait mode rotation" | sudo tee -a "$BOOT_CONFIG" > /dev/null
+        echo "display_rotate=1" | sudo tee -a "$BOOT_CONFIG" > /dev/null
+
+        print_success "Display rotation configured (display_rotate=1)"
+    fi
+
+    # For Pi 4: Warn about dtoverlay conflict
+    if [[ "$PI_MODEL" == *"Raspberry Pi 4"* ]]; then
+        if grep -q "^dtoverlay=vc4-fkms-v3d" "$BOOT_CONFIG"; then
+            print_warning "IMPORTANT: Pi 4 detected with vc4-fkms-v3d overlay"
+            print_warning "This conflicts with display_rotate on Pi 4!"
+            echo ""
+            print_info "Commenting out dtoverlay=vc4-fkms-v3d..."
+
+            sudo sed -i 's/^dtoverlay=vc4-fkms-v3d/#dtoverlay=vc4-fkms-v3d  # Disabled for display_rotate compatibility/' "$BOOT_CONFIG"
+
+            print_success "dtoverlay commented out to enable rotation"
+            print_info "The display will use legacy graphics driver instead"
+        fi
+    fi
+
+    echo ""
+    print_info "Display configuration summary:"
+    echo "  • Rotation: 90° clockwise (portrait)"
+    echo "  • Boot config: $BOOT_CONFIG"
+    echo "  • Xrandr: Enabled in kiosk script (redundant but needed for Pi 4)"
+    echo ""
+    print_warning "REBOOT REQUIRED for display rotation to take effect"
+else
+    print_warning "Could not auto-configure display rotation"
+    print_info "Please manually edit /boot/config.txt and add:"
+    echo "  display_rotate=1"
+fi
+
 echo ""
 
 ###############################################################################

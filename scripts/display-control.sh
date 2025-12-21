@@ -31,9 +31,10 @@ if [ "$COMMAND" = "on" ]; then
     exit 0
 elif [ "$COMMAND" = "off" ]; then
     # Turn display off
-    # Note: We could re-enable DPMS here, but it's not necessary
-    # since we're forcing the display off anyway
-    /usr/bin/xset dpms force off
+    # CRITICAL: Re-enable DPMS first so we can actually turn off the display
+    # (The "on" command disables DPMS, so we must re-enable it here)
+    /usr/bin/xset +dpms          # Enable DPMS
+    /usr/bin/xset dpms force off # Force display off
     exit 0
 else
     echo "Usage: $0 {on|off}"
