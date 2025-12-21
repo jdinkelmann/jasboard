@@ -4,6 +4,7 @@ import Weather from '../../components/widgets/Weather';
 import Calendar from '../../components/widgets/Calendar';
 import Metar from '../../components/widgets/Metar';
 import { useEffect, useState } from 'react';
+import WoD from '@/components/widgets/WoD';
 
 export default function Dashboard() {
   const [time, setTime] = useState<string>('');
@@ -39,16 +40,13 @@ export default function Dashboard() {
           <div className="text-xl text-gray-200">{date}</div>
         </section>
 
-        {/* Weather widget */}
-        
-
         {/* Calendar in middle - takes most space */}
         <section className="flex-grow min-h-0">
           <Calendar />
         </section>
 
         {/* Bottom section: METAR */}
-        <section className="flex-shrink-0 grid grid-cols-2 gap-4 h-64">
+        <section className="flex-shrink-0 grid grid-cols-2 gap-4 h-64 mb-8">
           <Weather />
           <Metar />
         </section>

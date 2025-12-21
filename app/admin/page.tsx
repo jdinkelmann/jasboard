@@ -23,7 +23,13 @@ interface Config {
     photos: number;
     weather: number;
     metar: number;
+    wod: number;
   };
+  wodUsers?: Array<{
+    id: string;
+    name: string;
+    fitnessLevel: 'beginner' | 'intermediate' | 'advanced';
+  }>;
 }
 
 const defaultConfig: Config = {
@@ -43,7 +49,9 @@ const defaultConfig: Config = {
     photos: 60,
     weather: 30,
     metar: 15,
+    wod: 1440,
   },
+  wodUsers: [],
 }
 
 interface CalendarInfo {
@@ -572,6 +580,104 @@ export default function AdminPage() {
                   })
                 }
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Workout of the Day */}
+        <section className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Workout of the Day</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Users (Add people who will use WOD)
+              </label>
+
+              {/* User list */}
+              <div className="space-y-2 mb-3">
+                {(config.wodUsers || []).map((user, idx) => (
+                  <div key={idx} className="flex gap-2 items-center bg-gray-700 p-3 rounded">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={user.name}
+                      onChange={(e) => {
+                        const newUsers = [...(config.wodUsers || [])];
+                        newUsers[idx].name = e.target.value;
+                        setConfig({ ...config, wodUsers: newUsers });
+                      }}
+                      className="flex-1 bg-gray-600 rounded px-3 py-1"
+                    />
+                    <select
+                      value={user.fitnessLevel}
+                      onChange={(e) => {
+                        const newUsers = [...(config.wodUsers || [])];
+                        newUsers[idx].fitnessLevel = e.target.value as 'beginner' | 'intermediate' | 'advanced';
+                        setConfig({ ...config, wodUsers: newUsers });
+                      }}
+                      className="bg-gray-600 rounded px-3 py-1"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                    <button
+                      onClick={() => {
+                        const newUsers = (config.wodUsers || []).filter((_, i) => i !== idx);
+                        setConfig({ ...config, wodUsers: newUsers });
+                      }}
+                      className="px-3 py-1 bg-red-600 rounded hover:bg-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add user button */}
+              <button
+                onClick={() => {
+                  const newUser = {
+                    id: `user-${Date.now()}`,
+                    name: `User ${(config.wodUsers || []).length + 1}`,
+                    fitnessLevel: 'intermediate' as const,
+                  };
+                  setConfig({
+                    ...config,
+                    wodUsers: [...(config.wodUsers || []), newUser],
+                  });
+                }}
+                className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+              >
+                + Add User
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Refresh interval (minutes)
+              </label>
+              <input
+                type="number"
+                className="w-32 bg-gray-700 rounded p-2"
+                value={config.refreshIntervals?.wod || 1440}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    refreshIntervals: {
+                      ...config.refreshIntervals,
+                      wod: parseInt(e.target.value) || 1440,
+                    },
+                  })
+                }
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Default: 1440 (24 hours - once daily)
+              </p>
+            </div>
+
+            <div className="text-sm text-gray-400">
+              <p>Workouts are sourced from <a href="https://darebee.com" target="_blank" rel="noopener" className="text-blue-400 hover:text-blue-300">DAREBEE</a> - free bodyweight exercises.</p>
             </div>
           </div>
         </section>

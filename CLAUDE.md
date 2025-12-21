@@ -34,24 +34,44 @@ The system consists of two components:
 
 ```
 /app
-  /page.tsx                 # Main display (portrait dashboard)
+  /page.tsx                      # Main display (portrait dashboard)
   /admin
-    /page.tsx              # Admin configuration interface
+    /page.tsx                    # Admin configuration interface
   /api
-    /calendar/route.ts     # Google Calendar API proxy
-    /photos/route.ts       # Google Photos API proxy
-    /weather/route.ts      # Weather API integration
-    /metar/route.ts        # FAA METAR data fetching
+    /auth
+      /google/route.ts           # OAuth initiation
+      /google/callback/route.ts  # OAuth callback handler
+      /status/route.ts           # Auth status check
+    /calendar/route.ts           # Google Calendar API proxy
+    /calendars
+      /list/route.ts             # List available calendars (NEW)
+    /photos/route.ts             # Google Photos API proxy
+    /weather/route.ts            # Weather API integration
+    /metar/route.ts              # FAA METAR data fetching
+    /reload/route.ts             # Display reload trigger (NEW)
+    /config/route.ts             # Config read/write
+  /themes
+    /default.tsx                 # Default theme layout
+    /paper.tsx                   # E-paper theme layout
+    /wood.tsx                    # Wood theme layout
+    /dashboard.tsx               # Dashboard theme layout
 /components
   /widgets
-    /Calendar.tsx          # Calendar widget
-    /Weather.tsx           # Weather display
-    /Photos.tsx            # Photo slideshow
-    /Metar.tsx            # METAR widget
+    /Calendar.tsx                # Calendar widget
+    /Weather.tsx                 # Weather display
+    /Photos.tsx                  # Photo slideshow placeholder
+    /Metar.tsx                   # METAR widget
 /lib
-  /google-auth.ts          # Google OAuth helpers
-  /config.ts              # Configuration management
-/public                    # Static assets
+  /google-auth.ts                # Google OAuth helpers
+  /config.ts                     # Configuration management
+  /themes
+    /definitions.ts              # Theme color definitions
+    /ThemeContext.tsx            # Theme state management
+/public
+  /images                        # Static assets
+/scripts
+  /jasboard-kiosk-start.sh       # Kiosk startup script
+  /update-kiosk-config.ps1       # Deploy kiosk config from Windows
 ```
 
 ## Development Commands
@@ -141,15 +161,45 @@ ADMIN_PASSWORD=...   # simple password for admin access
 
 ### User Configuration (stored in JSON file or database)
 The admin interface (`/admin`) allows configuring:
-- Calendar IDs to display
-- Photo album IDs
-- Weather location (lat/lon or zip code)
-- METAR airport code (e.g., "KBOS")
-- Refresh intervals for each widget
-- Display layout/widget positions
-- Portrait mode orientation settings
+- **Theme selection** - Choose between Default, E-paper, Wood, or Dashboard themes
+- **Background image** - Custom background URL for Dashboard theme
+- **Calendar IDs** - Select from available calendars or enter manually
+- **Photo album IDs** - Google Photos integration (currently disabled)
+- **Weather location** - Latitude/longitude and location name
+- **METAR airport code** - ICAO code (e.g., "KBOS")
+- **Refresh intervals** - Update frequency for each widget (minutes)
+- **Display reload** - Remote trigger to refresh the dashboard
 
-Configuration persists in `config.json` or a lightweight database (SQLite) on the Pi.
+**Configuration file structure (`config.json`):**
+```json
+{
+  "theme": "default",
+  "backgroundImageUrl": "https://...",
+  "calendarIds": ["primary", "family@group.calendar.google.com"],
+  "photoAlbumIds": [],
+  "selectedPhotos": [],
+  "weatherLocation": {
+    "lat": 42.3601,
+    "lon": -71.0589,
+    "name": "Boston, MA"
+  },
+  "metarStation": "KBOS",
+  "refreshIntervals": {
+    "calendar": 15,
+    "photos": 60,
+    "weather": 30,
+    "metar": 15
+  },
+  "googleTokens": {
+    "access_token": "...",
+    "refresh_token": "...",
+    "expiry_date": 1234567890
+  },
+  "reloadRequested": false
+}
+```
+
+Configuration persists in `config.json` on the Pi.
 
 ## Raspberry Pi Deployment
 
@@ -643,9 +693,73 @@ The theme system is fully implemented and production-ready:
 - Custom user-uploaded backgrounds for Wood theme
 - Theme preview in admin panel
 
+## Recent Feature Additions (December 2025)
+
+### Display Reload Functionality
+**Status: COMPLETED**
+
+Added remote display reload capability to refresh the dashboard without SSH access:
+
+**Implementation:**
+- New API route: `/api/reload/route.ts`
+  - POST: Sets reload flag in config
+  - GET: Checks and clears reload flag
+- Dashboard polling: Main page checks for reload flag every 10 seconds
+- Admin button: "Reload Display" button in admin interface
+
+**Files Modified:**
+- `lib/config.ts` - Added `reloadRequested?: boolean` to config interface
+- `app/page.tsx` - Added useEffect hook to poll `/api/reload` every 10 seconds
+- `app/admin/page.tsx` - Added green "Reload Display" button
+
+**Usage:**
+1. Navigate to `/admin`
+2. Click "Reload Display" button
+3. Dashboard automatically reloads within 10 seconds
+
+**Benefits:**
+- No SSH required to refresh the Pi display
+- Useful after config changes or when display gets stuck
+- Graceful reload without service restart
+
+### Calendar Picker
+**Status: COMPLETED**
+
+Added visual calendar picker to eliminate manual calendar ID lookup:
+
+**Implementation:**
+- New API route: `/api/calendars/list/route.ts`
+  - Fetches all calendars from authenticated Google account
+  - Returns calendar metadata (ID, name, description, primary status)
+- Admin UI enhancements:
+  - "Load My Calendars" button
+  - Checkbox list of available calendars
+  - Primary calendar badge
+  - Fallback textarea for manual entry
+
+**Files Created:**
+- `app/api/calendars/list/route.ts` - Google Calendar list fetcher
+
+**Files Modified:**
+- `app/admin/page.tsx` - Added calendar picker UI with checkboxes
+
+**Usage:**
+1. Authenticate with Google (if not already)
+2. Click "Load My Calendars" in Google Calendar section
+3. Check/uncheck calendars to select
+4. Manual textarea still available as fallback
+
+**Benefits:**
+- No need to look up calendar IDs manually
+- Visual selection with calendar names
+- Shows all accessible calendars including shared ones
+- Indicates primary calendar
+
 ## Future Considerations
 
 - Additional data sources (news, stocks, etc.)
 - Mobile app for quick admin access
 - Multiple board configurations for different displays
 - Restore Google Photos functionality with better error handling
+- Auto-reload on config changes (instead of manual button click)
+- Calendar color coding in display based on Google Calendar colors

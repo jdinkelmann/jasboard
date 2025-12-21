@@ -24,7 +24,8 @@
       "Bash(done)",
       "Bash(ls:*)",
       "Bash(ssh jas@jasboard.local \"cat /boot/config.txt | grep -E ''display_rotate|rotate'' || echo ''No rotation settings in config.txt''\")",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { WorkoutUser } from './types/wod';
 
 const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 
@@ -20,6 +21,7 @@ export interface AppConfig {
     photos: number;
     weather: number;
     metar: number;
+    wod: number;
   };
   googleTokens?: {
     access_token: string;
@@ -27,6 +29,11 @@ export interface AppConfig {
     expiry_date: number;
   };
   reloadRequested?: boolean;
+  wodUsers?: WorkoutUser[];
+  wodSettings?: {
+    source: 'darebee';
+    autoRefresh: boolean;
+  };
 }
 
 const defaultConfig: AppConfig = {
@@ -44,6 +51,12 @@ const defaultConfig: AppConfig = {
     photos: 60,
     weather: 30,
     metar: 15,
+    wod: 1440,
+  },
+  wodUsers: [],
+  wodSettings: {
+    source: 'darebee',
+    autoRefresh: true,
   },
 };
 

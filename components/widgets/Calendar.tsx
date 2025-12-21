@@ -169,7 +169,7 @@ export default function Calendar() {
                 </div>
 
                 {/* Events for this day */}
-                <div className="flex-1 overflow-hidden text-xs space-y-0.5 mb-3 px-2">
+                <div className="flex-1 overflow-hidden text-sm space-y-0.5 mb-3 px-2">
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
@@ -178,7 +178,7 @@ export default function Calendar() {
                     >
                       {!event.allDay && (
                         <>
-                          <span style={{ backgroundColor: '#fff', width: '8px', height: '8px', display: 'inline-block', top: '2px', position: 'relative', marginRight: '3px' }} className='rounded-full'>&nbsp;</span>
+                          <span style={{ backgroundColor: '#fff', width: '8px', height: '8px', display: 'inline-block', top: '4px', position: 'relative', marginRight: '3px' }} className='rounded-full'>&nbsp;</span>
                           {formatDayEventTimes(event.start)}{' '}
                         </>
                       )}

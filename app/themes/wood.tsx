@@ -2,6 +2,7 @@ import Weather from '../../components/widgets/Weather';
 import Calendar from '../../components/widgets/Calendar';
 import Photos from '../../components/widgets/Photos';
 import Metar from '../../components/widgets/Metar';
+import WoD from '../../components/widgets/WoD';
 
 export default function Wood() {
   return (
@@ -13,17 +14,22 @@ export default function Wood() {
               <Photos />
               <Metar />
             </section>
-            
+
             {/* Calendar in middle - takes most space */}
             <section className="flex-grow overflow-hidden">
               <Calendar />
             </section>
-    
-            {/* Bottom section: Photos and METAR side by side */}
+
+            {/* Bottom section: Weather */}
             <section className="flex-shrink-0">
               <Weather />
             </section>
-    
+
+            {/* WOD section */}
+            <section className="flex-shrink-0 h-64">
+              <WoD />
+            </section>
+
           </div>
         </main>
   );

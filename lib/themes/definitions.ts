@@ -39,6 +39,11 @@ export interface ThemeDefinition {
     photosBackground: string;
     photosText: string;
     photosBorder: string;
+
+    // WOD widget
+    wodBackground: string;
+    wodText: string;
+    wodAccent: string;
   };
 
   // Additional theme-specific properties
@@ -78,6 +83,10 @@ export const defaultTheme: ThemeDefinition = {
     photosBackground: '#111827', // gray-900
     photosText: '#9ca3af', // gray-400
     photosBorder: '#374151', // gray-700
+
+    wodBackground: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', // green gradient
+    wodText: '#ffffff',
+    wodAccent: '#34d399', // green-400
   },
   properties: {
     widgetOpacity: 1,
@@ -114,6 +123,10 @@ export const epaperTheme: ThemeDefinition = {
     photosBackground: '#f3f4f6', // gray-100
     photosText: '#6b7280', // gray-500
     photosBorder: '#d1d5db', // gray-300
+
+    wodBackground: '#d1fae5', // light mint (green-100)
+    wodText: '#064e3b', // dark green (green-900)
+    wodAccent: '#10b981', // green-500
   },
   properties: {
     widgetOpacity: 1,
@@ -150,6 +163,10 @@ export const woodTheme: ThemeDefinition = {
     photosBackground: 'rgba(87, 83, 78, 0.85)', // stone-700 with transparency
     photosText: '#e7e5e4', // stone-200
     photosBorder: 'rgba(168, 162, 158, 0.5)', // stone-400 with transparency
+
+    wodBackground: 'rgba(20, 83, 45, 0.85)', // forest green with transparency
+    wodText: '#f0fdf4', // green-50
+    wodAccent: '#4ade80', // green-400
   },
   properties: {
     widgetOpacity: 0.9,
@@ -187,6 +204,10 @@ export const dashboardTheme: ThemeDefinition = {
     photosBackground: 'rgba(0, 0, 0, 0.6)',
     photosText: '#e5e7eb', // gray-200
     photosBorder: 'rgba(255, 255, 255, 0.15)',
+
+    wodBackground: 'rgba(16, 185, 129, 0.90)', // green with transparency
+    wodText: '#ffffff',
+    wodAccent: '#34d399', // green-400
   },
   properties: {
     widgetOpacity: 1, // Cards handle their own opacity
@@ -248,6 +269,10 @@ export function themeToCssVariables(theme: ThemeDefinition): Record<string, stri
     '--theme-photos-bg': theme.colors.photosBackground,
     '--theme-photos-text': theme.colors.photosText,
     '--theme-photos-border': theme.colors.photosBorder,
+
+    '--theme-wod-bg': theme.colors.wodBackground,
+    '--theme-wod-text': theme.colors.wodText,
+    '--theme-wod-accent': theme.colors.wodAccent,
 
     '--theme-widget-opacity': theme.properties.widgetOpacity.toString(),
     '--theme-backdrop-blur': theme.properties.widgetBackdropBlur,
