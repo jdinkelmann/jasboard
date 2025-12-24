@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { readConfig } from '../../../lib/config';
-import { format } from 'date-fns';
 
 // Force dynamic rendering - depends on runtime config
 export const dynamic = 'force-dynamic';
@@ -96,8 +95,13 @@ export async function GET() {
         (p: any) => p.name === `${dayName} Night` || p.name === `Tonight`
       );
 
+      // Use abbreviated day name consistently
+      const abbreviatedDay = dayName === 'This Afternoon' || dayName === 'Tonight'
+        ? 'Today'
+        : dayName.substring(0, 3);
+
       dailyForecasts.push({
-        day: format(new Date(period.startTime), 'EEE'),
+        day: abbreviatedDay,
         high: period.temperature,
         low: nightPeriod ? nightPeriod.temperature : period.temperature - 10,
         condition: period.shortForecast,
