@@ -7,7 +7,8 @@ const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 export interface AppConfig {
   theme?: 'default' | 'epaper' | 'wood' | 'dashboard';
   backgroundImageUrl?: string;
-  calendarIds: string[];
+  calendarIds: string[]; // Legacy - kept for backward compatibility
+  iCalUrls?: string[]; // Private iCal feed URLs (preferred method)
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
   weatherLocation: {
@@ -38,6 +39,7 @@ export interface AppConfig {
 
 const defaultConfig: AppConfig = {
   calendarIds: [],
+  iCalUrls: [],
   photoAlbumIds: [],
   selectedPhotos: [],
   weatherLocation: {

@@ -1,62 +1,85 @@
 import { NextResponse } from 'next/server';
-import { google } from 'googleapis';
-import { getAuthenticatedClient } from '../../../lib/google-auth';
 import { readConfig } from '../../../lib/config';
+import ical from 'node-ical';
 
-// Force dynamic rendering - requires authentication
+// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 // Cache for 15 minutes
 export const revalidate = 900;
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+}
 
 export async function GET() {
   try {
     // Get configuration
     const config = await readConfig();
-    const calendarIds = config.calendarIds;
+    const iCalUrls = config.iCalUrls || [];
 
     // If no calendars configured, return empty array
-    if (!calendarIds || calendarIds.length === 0) {
+    if (iCalUrls.length === 0) {
       return NextResponse.json({ events: [] });
     }
 
-    // Get authenticated Google client
-    const auth = await getAuthenticatedClient();
-    const calendar = google.calendar({ version: 'v3', auth });
+    const allEvents: CalendarEvent[] = [];
 
     // Fetch events from now to 30 days in the future
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
 
-    const allEvents: any[] = [];
-
-    // Fetch events from each configured calendar
-    for (const calendarId of calendarIds) {
+    // Fetch and parse each iCal feed
+    for (const iCalUrl of iCalUrls) {
       try {
-        const response = await calendar.events.list({
-          calendarId,
-          timeMin: now.toISOString(),
-          timeMax: futureDate.toISOString(),
-          singleEvents: true,
-          orderBy: 'startTime',
-          maxResults: 100,
+        // Fetch the iCal feed (disable Next.js caching - feeds can be large)
+        const response = await fetch(iCalUrl, {
+          cache: 'no-store',
+          headers: {
+            'User-Agent': 'JasBoard/1.0',
+          },
         });
+        if (!response.ok) {
+          console.error(`Failed to fetch iCal feed: ${iCalUrl}`, response.statusText);
+          continue;
+        }
 
-        const items = response.data.items || [];
+        const iCalData = await response.text();
+
+        // Parse the iCal data
+        const events = await ical.async.parseICS(iCalData);
 
         // Transform events to our format
-        const transformedEvents = items.map((event) => ({
-          id: event.id || '',
-          title: event.summary || 'Untitled Event',
-          start: event.start?.dateTime || event.start?.date || '',
-          end: event.end?.dateTime || event.end?.date || '',
-          allDay: !event.start?.dateTime, // If no time, it's an all-day event
-        }));
+        for (const event of Object.values(events)) {
+          if (event.type !== 'VEVENT') continue;
 
-        allEvents.push(...transformedEvents);
-      } catch (calError) {
-        console.error(`Error fetching calendar ${calendarId}:`, calError);
-        // Continue with other calendars even if one fails
+          const startDate = event.start ? new Date(event.start) : null;
+          const endDate = event.end ? new Date(event.end) : null;
+
+          // Skip events outside our date range
+          if (!startDate || startDate > futureDate || (endDate && endDate < now)) {
+            continue;
+          }
+
+          // Determine if it's an all-day event
+          const allDay = event.start && typeof event.start === 'object' &&
+                        !event.start.toISOString().includes('T');
+
+          allEvents.push({
+            id: event.uid || `${iCalUrl}-${startDate?.getTime()}`,
+            title: event.summary || 'Untitled Event',
+            start: startDate?.toISOString() || '',
+            end: endDate?.toISOString() || startDate?.toISOString() || '',
+            allDay: allDay,
+          });
+        }
+      } catch (feedError) {
+        console.error(`Error parsing iCal feed ${iCalUrl}:`, feedError);
+        // Continue with other feeds even if one fails
       }
     }
 

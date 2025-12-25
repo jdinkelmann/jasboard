@@ -10,6 +10,7 @@ interface Config {
   theme?: 'default' | 'epaper' | 'wood' | 'dashboard';
   backgroundImageUrl?: string;
   calendarIds: string[];
+  iCalUrls?: string[];
   photoAlbumIds: string[];
   selectedPhotos?: { id: string; url: string; alt: string; mimeType?: string }[];
   weatherLocation: {
@@ -36,6 +37,7 @@ const defaultConfig: Config = {
   theme: 'default',
   backgroundImageUrl: undefined,
   calendarIds: [],
+  iCalUrls: [],
   photoAlbumIds: [],
   selectedPhotos: [],
   weatherLocation: {
@@ -325,25 +327,27 @@ export default function AdminPage() {
           </div>
         </section>
 
-        {/* Google Authentication */}
-        <section className="bg-gray-800 rounded-lg p-6 mb-6 border-2 border-blue-600">
-          <h2 className="text-2xl font-semibold mb-4">Google Authentication</h2>
+        {/* Google Authentication - Optional */}
+        <section className="bg-gray-800 rounded-lg p-6 mb-6 opacity-50">
+          <h2 className="text-2xl font-semibold mb-4">Google Authentication (Optional)</h2>
           <div className="space-y-4">
-            <p className="text-gray-300">
-              Connect your Google account to access Calendar and Photos.
+            <p className="text-gray-300 text-sm">
+              Google OAuth is no longer required for calendars (we now use iCal feeds).
+              This section is kept for future Google Photos integration.
             </p>
 
             {authStatus === 'checking' && (
-              <div className="text-gray-400">Checking authentication status...</div>
+              <div className="text-gray-400 text-sm">Checking authentication status...</div>
             )}
 
             {authStatus === 'not_authenticated' && (
               <div>
                 <button
                   onClick={initiateGoogleOAuth}
-                  className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
+                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm font-semibold"
+                  disabled
                 >
-                  Connect Google Account
+                  Connect Google Account (Disabled)
                 </button>
               </div>
             )}
@@ -354,107 +358,56 @@ export default function AdminPage() {
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Connected to Google</span>
+                  <span className="text-sm">Connected to Google</span>
                 </div>
                 <button
                   onClick={resetGoogleAuth}
-                  className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded text-sm font-semibold"
+                  className="bg-orange-600 hover:bg-orange-700 px-3 py-1 rounded text-xs font-semibold"
                 >
-                  Re-authenticate with Google
+                  Disconnect
                 </button>
-                <p className="text-xs text-gray-400">
-                  Use this if your tokens have expired or you need to reconnect your Google account.
-                </p>
               </div>
             )}
 
             {oauthMessage && (
-              <div className={`p-3 rounded ${oauthMessage.includes('Success') ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
+              <div className={`p-2 rounded text-xs ${oauthMessage.includes('Success') ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`}>
                 {oauthMessage}
               </div>
             )}
           </div>
         </section>
 
-        {/* Google Calendar */}
+        {/* Calendar Feeds */}
         <section className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">Google Calendar</h2>
+          <h2 className="text-2xl font-semibold mb-4">Calendar Feeds</h2>
           <div className="space-y-4">
-            {/* Calendar Picker */}
-            {authStatus === 'authenticated' && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium">
-                    Select Calendars
-                  </label>
-                  <button
-                    onClick={loadAvailableCalendars}
-                    disabled={loadingCalendars}
-                    className="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded"
-                  >
-                    {loadingCalendars ? 'Loading...' : 'Load My Calendars'}
-                  </button>
-                </div>
+            <div className="p-4 rounded bg-blue-900 text-blue-200 text-sm">
+              <p className="font-semibold mb-2">📅 How to get your private iCal URL:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>Open <a href="https://calendar.google.com" target="_blank" rel="noopener" className="underline">Google Calendar</a></li>
+                <li>Click the 3 dots next to a calendar → Settings and sharing</li>
+                <li>Scroll to &quot;Secret address in iCal format&quot;</li>
+                <li>Copy the URL and paste below (one per line)</li>
+              </ol>
+            </div>
 
-                {calendarError && (
-                  <div className="p-3 rounded bg-red-900 text-red-200 text-sm mb-3">
-                    {calendarError}
-                  </div>
-                )}
-
-                {availableCalendars.length > 0 && (
-                  <div className="bg-gray-700 rounded p-4 max-h-64 overflow-y-auto space-y-2">
-                    {availableCalendars.map((cal) => (
-                      <label
-                        key={cal.id}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-600 rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={config.calendarIds.includes(cal.id)}
-                          onChange={() => toggleCalendar(cal.id)}
-                          className="w-4 h-4"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{cal.summary}</span>
-                            {cal.primary && (
-                              <span className="text-xs bg-blue-600 px-2 py-0.5 rounded">
-                                Primary
-                              </span>
-                            )}
-                          </div>
-                          {cal.description && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              {cal.description}
-                            </div>
-                          )}
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Manual Calendar IDs (fallback) */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Or Enter Calendar IDs Manually (one per line)
+                Private iCal Feed URLs (one per line)
               </label>
               <textarea
-                className="w-full bg-gray-700 rounded p-3 h-24 text-sm"
-                value={config.calendarIds.join('\n')}
+                className="w-full bg-gray-700 rounded p-3 h-32 text-sm font-mono"
+                value={(config.iCalUrls || []).join('\n')}
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    calendarIds: e.target.value.split('\n').filter((id) => id.trim()),
+                    iCalUrls: e.target.value.split('\n').filter((url) => url.trim()),
                   })
                 }
-                placeholder="primary&#10;family@group.calendar.google.com"
+                placeholder="https://calendar.google.com/calendar/ical/YOUR_EMAIL/private-KEY/basic.ics"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Current selection: {config.calendarIds.length} calendar{config.calendarIds.length !== 1 ? 's' : ''}
+                {(config.iCalUrls || []).length} calendar feed{(config.iCalUrls || []).length !== 1 ? 's' : ''} configured
               </p>
             </div>
 
