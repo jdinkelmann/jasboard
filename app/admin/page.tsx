@@ -133,6 +133,29 @@ export default function AdminPage() {
     }
   };
 
+  const resetGoogleAuth = async () => {
+    if (!confirm('This will sign you out of Google and clear all tokens. You will need to re-authenticate. Continue?')) {
+      return;
+    }
+
+    try {
+      // Clear tokens from config
+      const response = await fetch('/api/auth/reset', { method: 'POST' });
+      if (response.ok) {
+        setAuthStatus('not_authenticated');
+        setOauthMessage('Google authentication reset. Please re-authenticate.');
+        setAvailableCalendars([]);
+        // Optionally reload config to reflect cleared tokens
+        await fetchConfig();
+      } else {
+        setOauthMessage('Failed to reset authentication');
+      }
+    } catch (error) {
+      console.error('Failed to reset auth:', error);
+      setOauthMessage('Error resetting authentication');
+    }
+  };
+
   const loadAvailableCalendars = async () => {
     setLoadingCalendars(true);
     setCalendarError('');
@@ -326,11 +349,22 @@ export default function AdminPage() {
             )}
 
             {authStatus === 'authenticated' && (
-              <div className="flex items-center gap-2 text-green-400">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Connected to Google</span>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-400">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Connected to Google</span>
+                </div>
+                <button
+                  onClick={resetGoogleAuth}
+                  className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded text-sm font-semibold"
+                >
+                  Re-authenticate with Google
+                </button>
+                <p className="text-xs text-gray-400">
+                  Use this if your tokens have expired or you need to reconnect your Google account.
+                </p>
               </div>
             )}
 
