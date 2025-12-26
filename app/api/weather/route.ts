@@ -1,135 +1,146 @@
 import { NextResponse } from 'next/server';
 import { readConfig } from '../../../lib/config';
+import { format } from 'date-fns';
 
 // Force dynamic rendering - depends on runtime config
 export const dynamic = 'force-dynamic';
 // Cache for 30 minutes
 export const revalidate = 1800;
 
-// Helper to convert weather condition to emoji
-function getWeatherIcon(forecast: string): string {
-  const lower = forecast.toLowerCase();
-  if (lower.includes('thunder')) return '⛈️';
-  if (lower.includes('rain') || lower.includes('shower')) return '🌧️';
-  if (lower.includes('snow')) return '🌨️';
-  if (lower.includes('cloud') && lower.includes('part')) return '⛅';
-  if (lower.includes('cloud') || lower.includes('overcast')) return '☁️';
-  if (lower.includes('clear') || lower.includes('sunny')) return '☀️';
-  if (lower.includes('fog') || lower.includes('mist')) return '🌫️';
-  return '🌤️';
+// Tomorrow.io API key (hardcoded for now, move to env later)
+const TOMORROW_API_KEY = 'qsKTql4jZCxnTeQKQsNGQFLZGVqIA0br';
+
+// Helper to convert Tomorrow.io weather code to emoji
+function getWeatherIcon(weatherCode: number): string {
+  // Clear & Cloudy
+  if (weatherCode === 1000) return '☀️'; // Clear, Sunny
+  if (weatherCode === 1100) return '🌤️'; // Mostly Clear
+  if (weatherCode === 1101) return '⛅'; // Partly Cloudy
+  if (weatherCode === 1102) return '🌥️'; // Mostly Cloudy
+  if (weatherCode === 1001) return '☁️'; // Cloudy
+
+  // Fog
+  if (weatherCode === 2000 || weatherCode === 2100) return '🌫️'; // Fog
+
+  // Rain
+  if (weatherCode === 4000 || weatherCode === 4200) return '🌧️'; // Drizzle, Light Rain
+  if (weatherCode === 4001 || weatherCode === 4201) return '🌧️'; // Rain, Heavy Rain
+
+  // Snow
+  if (weatherCode >= 5000 && weatherCode <= 5101) return '🌨️'; // Snow
+
+  // Freezing Rain / Ice
+  if (weatherCode >= 6000 && weatherCode <= 6201) return '🌧️'; // Freezing Rain
+  if (weatherCode >= 7000 && weatherCode <= 7102) return '🧊'; // Ice Pellets
+
+  // Thunderstorm
+  if (weatherCode === 8000) return '⛈️'; // Thunderstorm
+
+  return '🌤️'; // Default
+}
+
+// Helper to get weather condition description
+function getWeatherDescription(weatherCode: number): string {
+  const descriptions: { [key: number]: string } = {
+    1000: 'Clear',
+    1100: 'Mostly Clear',
+    1101: 'Partly Cloudy',
+    1102: 'Mostly Cloudy',
+    1001: 'Cloudy',
+    2000: 'Fog',
+    2100: 'Light Fog',
+    4000: 'Drizzle',
+    4200: 'Light Rain',
+    4001: 'Rain',
+    4201: 'Heavy Rain',
+    5001: 'Flurries',
+    5100: 'Light Snow',
+    5000: 'Snow',
+    5101: 'Heavy Snow',
+    6000: 'Freezing Drizzle',
+    6001: 'Freezing Rain',
+    6200: 'Light Freezing Rain',
+    6201: 'Heavy Freezing Rain',
+    7000: 'Ice Pellets',
+    7102: 'Light Ice Pellets',
+    7101: 'Heavy Ice Pellets',
+    8000: 'Thunderstorm',
+  };
+
+  return descriptions[weatherCode] || 'Unknown';
 }
 
 export async function GET() {
   try {
     // Get location from config
     const config = await readConfig();
-    const { lat, lon } = config.weatherLocation;
+    const { lat, lon, name } = config.weatherLocation;
 
-    // Step 1: Get the forecast URL for this location
-    const pointsResponse = await fetch(
-      `https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`,
-      {
-        headers: {
-          'User-Agent': 'JasBoard (personal use)',
-        },
+    // Fetch weather from Tomorrow.io (imperial = Fahrenheit)
+    const url = `https://api.tomorrow.io/v4/weather/forecast?location=${lat},${lon}&apikey=${TOMORROW_API_KEY}&timesteps=daily&units=imperial`;
+
+    const response = await fetch(url, {
+      cache: 'no-store', // Don't cache the fetch to avoid issues
+    });
+
+    if (!response.ok) {
+      // Handle rate limiting (429) and other errors
+      if (response.status === 429) {
+        console.error('Tomorrow.io rate limit exceeded. Using cached/fallback data.');
       }
-    );
-
-    if (!pointsResponse.ok) {
-      throw new Error(`NWS points API error: ${pointsResponse.status}`);
+      throw new Error(`Tomorrow.io API error: ${response.status}`);
     }
 
-    const pointsData = await pointsResponse.json();
-    const forecastUrl = pointsData.properties.forecast;
-    const forecastHourlyUrl = pointsData.properties.forecastHourly;
+    const data = await response.json();
+    const dailyTimeline = data.timelines.daily;
 
-    // Step 2: Get the forecast data
-    const forecastResponse = await fetch(forecastUrl, {
-      headers: {
-        'User-Agent': 'JasBoard (personal use)',
-      },
-    });
-
-    if (!forecastResponse.ok) {
-      throw new Error(`NWS forecast API error: ${forecastResponse.status}`);
-    }
-
-    const forecastData = await forecastResponse.json();
-    const periods = forecastData.properties.periods;
-
-    // Get current temperature from hourly forecast
-    const hourlyResponse = await fetch(forecastHourlyUrl, {
-      headers: {
-        'User-Agent': 'JasBoard (personal use)',
-      },
-    });
-
-    let currentTemp = periods[0].temperature;
-    if (hourlyResponse.ok) {
-      const hourlyData = await hourlyResponse.json();
-      currentTemp = hourlyData.properties.periods[0].temperature;
-    }
+    // Use today's average temp and weather code for current conditions
+    // This avoids a second API call and stays within rate limits
+    const currentTemp = Math.round(dailyTimeline[0].values.temperatureAvg);
+    const currentCode = dailyTimeline[0].values.weatherCodeMax;
 
     // Format current weather
     const current = {
       temp: currentTemp,
-      condition: periods[0].shortForecast,
-      icon: getWeatherIcon(periods[0].shortForecast),
+      condition: getWeatherDescription(currentCode),
+      icon: getWeatherIcon(currentCode),
     };
 
     // Format 5-day forecast
-    // NWS returns day/night periods, so we need to group them
-    const dailyForecasts: any[] = [];
-    const seenDays = new Set();
+    const dailyForecasts = dailyTimeline.slice(0, 5).map((day: any, index: number) => {
+      const date = new Date(day.time);
+      const dayName = index === 0 ? 'Today' : format(date, 'EEE');
 
-    for (const period of periods) {
-      const dayName = period.name.split(' ')[0]; // "Monday Night" -> "Monday"
-
-      if (seenDays.has(dayName)) continue;
-      if (dailyForecasts.length >= 5) break;
-
-      seenDays.add(dayName);
-
-      // Find the corresponding night period for low temp
-      const nightPeriod = periods.find(
-        (p: any) => p.name === `${dayName} Night` || p.name === `Tonight`
-      );
-
-      // Use abbreviated day name consistently
-      const abbreviatedDay = dayName === 'This Afternoon' || dayName === 'Tonight'
-        ? 'Today'
-        : dayName.substring(0, 3);
-
-      dailyForecasts.push({
-        day: abbreviatedDay,
-        high: period.temperature,
-        low: nightPeriod ? nightPeriod.temperature : period.temperature - 10,
-        condition: period.shortForecast,
-        icon: getWeatherIcon(period.shortForecast),
-      });
-    }
+      return {
+        day: dayName,
+        high: Math.round(day.values.temperatureMax),
+        low: Math.round(day.values.temperatureMin),
+        condition: getWeatherDescription(day.values.weatherCodeMax),
+        icon: getWeatherIcon(day.values.weatherCodeMax),
+      };
+    });
 
     return NextResponse.json({
-      location: config.weatherLocation.name,
+      location: name,
       current,
       forecast: dailyForecasts,
     });
   } catch (error) {
     console.error('Weather API error:', error);
 
-    // Fallback to mock data on error
+    // Fallback to mock data on error (Fahrenheit)
     const mockData = {
       current: {
-        temp: 72,
+        temp: 68,
         condition: 'Data Unavailable',
         icon: '❓',
       },
       forecast: [
-        { day: 'Mon', high: 75, low: 62, condition: 'Unavailable', icon: '❓' },
-        { day: 'Tue', high: 73, low: 60, condition: 'Unavailable', icon: '❓' },
-        { day: 'Wed', high: 68, low: 58, condition: 'Unavailable', icon: '❓' },
-        { day: 'Thu', high: 70, low: 59, condition: 'Unavailable', icon: '❓' },
-        { day: 'Fri', high: 74, low: 61, condition: 'Unavailable', icon: '❓' },
+        { day: 'Today', high: 72, low: 59, condition: 'Unavailable', icon: '❓' },
+        { day: 'Fri', high: 70, low: 58, condition: 'Unavailable', icon: '❓' },
+        { day: 'Sat', high: 66, low: 54, condition: 'Unavailable', icon: '❓' },
+        { day: 'Sun', high: 68, low: 55, condition: 'Unavailable', icon: '❓' },
+        { day: 'Mon', high: 72, low: 59, condition: 'Unavailable', icon: '❓' },
       ],
     };
 
